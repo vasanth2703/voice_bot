@@ -29,3 +29,6 @@ dist-ssr
 # Cloudflare Wrangler files
 .wrangler
 .wrangler/*
+
+# Ignore local lock file to bypass clean installs
+package-lock.json
