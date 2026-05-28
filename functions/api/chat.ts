@@ -2,51 +2,11 @@ interface Env {
   GEMINI_API_KEY?: string;
 }
 
-// --- Cloudflare Pages Function entry points ---
+// --- Cloudflare Pages Function POST handler ---
 export async function onRequestPost(context: {
   request: Request;
   env: Env;
 }) {
-  return handleRequest(context.request, context.env);
-}
-
-export async function onRequestOptions() {
-  return handleOptions();
-}
-
-// --- Cloudflare Workers entry point (for workers.dev deployments) ---
-export default {
-  async fetch(request: Request, env: Env) {
-    const url = new URL(request.url);
-    
-    // Support calls to both /api/chat and root /chat paths
-    if (url.pathname === "/api/chat" || url.pathname === "/chat" || url.pathname === "/") {
-      if (request.method === "OPTIONS") {
-        return handleOptions();
-      }
-      if (request.method === "POST") {
-        return handleRequest(request, env);
-      }
-      return new Response(JSON.stringify({ error: "Method Not Allowed. Use POST." }), {
-        status: 405,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        }
-      });
-    }
-    
-    return new Response(JSON.stringify({ error: "Not Found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-};
-
-// --- Shared Core Request Logic (Gemini API Integration) ---
-async function handleRequest(request: Request, env: Env) {
   const headers = new Headers({
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -55,7 +15,7 @@ async function handleRequest(request: Request, env: Env) {
   });
 
   try {
-    const { message } = (await request.json()) as { message?: string };
+    const { message } = (await context.request.json()) as { message?: string };
     
     if (!message) {
       return new Response(JSON.stringify({ error: "Message is required." }), {
@@ -64,11 +24,11 @@ async function handleRequest(request: Request, env: Env) {
       });
     }
 
-    const apiKey = env.GEMINI_API_KEY;
+    const apiKey = context.env.GEMINI_API_KEY;
     if (!apiKey) {
       return new Response(
         JSON.stringify({
-          reply: "I'd love to answer that, but my connection is currently missing its API key configuration. Please configure GEMINI_API_KEY as an environment variable in your Cloudflare dashboard.",
+          reply: "I'd love to answer that, but my connection is currently missing its API key configuration. Please configure GEMINI_API_KEY as an environment variable in your Cloudflare Pages dashboard.",
         }),
         { status: 200, headers }
       );
@@ -147,7 +107,7 @@ My Profile Details:
     });
 
   } catch (error: any) {
-    console.error("Handler Error:", error);
+    console.error("Pages Function Error:", error);
     return new Response(
       JSON.stringify({
         reply: "Oops! An internal error occurred while trying to process that question. Let's try once more.",
@@ -158,8 +118,8 @@ My Profile Details:
   }
 }
 
-// OPTIONS Request handler (CORS)
-function handleOptions() {
+// --- Cloudflare Pages Function OPTIONS handler (CORS preflight) ---
+export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
     headers: {
