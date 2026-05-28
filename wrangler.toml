@@ -1,0 +1,7 @@
+name = "voicebot"
+main = "functions/api/chat.ts"
+compatibility_date = "2026-05-28"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"

@@ -1,5 +1,6 @@
 interface Env {
   GEMINI_API_KEY?: string;
+  ASSETS?: { fetch: typeof fetch };
 }
 
 // --- Cloudflare Pages Function POST handler ---
@@ -19,7 +20,9 @@ export async function onRequestOptions() {
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/chat" || url.pathname === "/chat" || url.pathname === "/") {
+    
+    // Route API request
+    if (url.pathname === "/api/chat" || url.pathname === "/chat") {
       if (request.method === "OPTIONS") return handleOptions();
       if (request.method === "POST") return handleRequest(request, env);
       return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
@@ -32,6 +35,12 @@ export default {
         }
       });
     }
+    
+    // Serve static assets for all other routes
+    if (env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
+    
     return new Response(JSON.stringify({ error: "Not Found" }), { status: 404 });
   }
 };
