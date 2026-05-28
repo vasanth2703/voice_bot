@@ -7,6 +7,47 @@ export async function onRequestPost(context: {
   request: Request;
   env: Env;
 }) {
+  return handleRequest(context.request, context.env);
+}
+
+// --- Cloudflare Pages Function OPTIONS handler ---
+export async function onRequestOptions() {
+  return handleOptions();
+}
+
+// --- Cloudflare Workers entry point (for workers.dev deployments) ---
+export default {
+  async fetch(request: Request, env: Env) {
+    const url = new URL(request.url);
+    
+    // Support calls to both /api/chat and root /chat paths
+    if (url.pathname === "/api/chat" || url.pathname === "/chat" || url.pathname === "/") {
+      if (request.method === "OPTIONS") {
+        return handleOptions();
+      }
+      if (request.method === "POST") {
+        return handleRequest(request, env);
+      }
+      return new Response(JSON.stringify({ error: "Method Not Allowed. Use POST." }), {
+        status: 405,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        }
+      });
+    }
+    
+    return new Response(JSON.stringify({ error: "Not Found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+};
+
+// --- Shared Core Request Logic (Gemini API Integration) ---
+async function handleRequest(request: Request, env: Env) {
   const headers = new Headers({
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -15,7 +56,7 @@ export async function onRequestPost(context: {
   });
 
   try {
-    const { message } = (await context.request.json()) as { message?: string };
+    const { message } = (await request.json()) as { message?: string };
     
     if (!message) {
       return new Response(JSON.stringify({ error: "Message is required." }), {
@@ -24,11 +65,11 @@ export async function onRequestPost(context: {
       });
     }
 
-    const apiKey = context.env.GEMINI_API_KEY;
+    const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) {
       return new Response(
         JSON.stringify({
-          reply: "I'd love to answer that, but my connection is currently missing its API key configuration. Please configure GEMINI_API_KEY as an environment variable in your Cloudflare Pages dashboard.",
+          reply: "I'd love to answer that, but my connection is currently missing its API key configuration. Please configure GEMINI_API_KEY as an environment variable in your Cloudflare dashboard.",
         }),
         { status: 200, headers }
       );
@@ -107,7 +148,7 @@ My Profile Details:
     });
 
   } catch (error: any) {
-    console.error("Pages Function Error:", error);
+    console.error("Handler Error:", error);
     return new Response(
       JSON.stringify({
         reply: "Oops! An internal error occurred while trying to process that question. Let's try once more.",
@@ -118,8 +159,8 @@ My Profile Details:
   }
 }
 
-// --- Cloudflare Pages Function OPTIONS handler (CORS preflight) ---
-export async function onRequestOptions() {
+// OPTIONS Request handler (CORS preflight)
+function handleOptions() {
   return new Response(null, {
     status: 204,
     headers: {
