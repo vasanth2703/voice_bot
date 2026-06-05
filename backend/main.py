@@ -146,10 +146,9 @@ async def chat_endpoint(payload: ChatRequest):
                 )
             )
             
-        # 4. Initialize the Gemini Model with tools
+        # 4. Initialize the Gemini Model
         model = genai.GenerativeModel(
             model_name="gemini-2.5-flash",
-            tools=[checkAvailability, bookCall],
             system_instruction=system_instruction
         )
         
@@ -228,9 +227,9 @@ async def chat_endpoint(payload: ChatRequest):
         if not final_reply:
             final_reply = "I'm sorry, I encountered an issue processing your request. Please try again."
             
-        # 6. Log the conversation to SQLite database
-        if message:
-            database.save_chat_log(message, final_reply)
+        # 6. Log the conversation to SQLite database (disabled: handled by Cloudflare proxy)
+        # if message:
+        #     database.save_chat_log(message, final_reply)
             
         return {
             "reply": final_reply,
@@ -248,5 +247,6 @@ async def chat_endpoint(payload: ChatRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    # Start the server on port 8000
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    # Start the server on dynamic port
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

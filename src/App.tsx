@@ -14,14 +14,6 @@ interface ChatLog {
   timestamp: string;
 }
 
-interface Booking {
-  id: number;
-  name: string;
-  email: string;
-  booking_time: string;
-  purpose: string;
-  timestamp: string;
-}
 
 function App() {
   const [question, setQuestion] = useState("");
@@ -43,18 +35,7 @@ function App() {
 
   // D1 Logs Dashboard State
   const [chatLogs, setChatLogs] = useState<ChatLog[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [activeTab, setActiveTab] = useState<"logs" | "bookings">("logs");
   const [dbStatus, setDbStatus] = useState("Connected");
-
-  // Booking Form State
-  const [bookName, setBookName] = useState("");
-  const [bookEmail, setBookEmail] = useState("");
-  const [bookDate, setBookDate] = useState("");
-  const [bookTime, setBookTime] = useState("");
-  const [bookPurpose, setBookPurpose] = useState("");
-  const [bookLoading, setBookLoading] = useState(false);
-  const [bookMessage, setBookMessage] = useState("");
 
   const recognitionRef = useRef<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -72,7 +53,6 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         setChatLogs(data.chatLogs || []);
-        setBookings(data.bookings || []);
         setDbStatus("Connected");
       } else {
         setDbStatus("Error");
@@ -307,37 +287,7 @@ function App() {
 
   askBotRef.current = askBot;
 
-  // Handles Quick Booking Form Submission (directly sends instruction to Chat agent!)
-  const handleQuickBook = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!bookName || !bookEmail || !bookDate || !bookTime) {
-      setBookMessage("❌ Please fill in all required fields.");
-      return;
-    }
 
-    setBookLoading(true);
-    setBookMessage("");
-
-    const formattedBookingTime = `${bookDate} ${bookTime}`;
-    const instructMessage = `I want to book a call. My details are: Name: ${bookName}, Email: ${bookEmail}, Slot: ${formattedBookingTime}, Purpose: ${bookPurpose || "General Inquiry"}`;
-
-    try {
-      // Send message to chatbot, which triggers tool call
-      await askBot(instructMessage);
-      setBookMessage("🎉 Call booking request submitted via agent! Check chat and bookings list.");
-      
-      // Clear form
-      setBookName("");
-      setBookEmail("");
-      setBookDate("");
-      setBookTime("");
-      setBookPurpose("");
-    } catch (err: any) {
-      setBookMessage("❌ Booking failed: " + err.message);
-    } finally {
-      setBookLoading(false);
-    }
-  };
 
   const handleChipClick = (q: string) => {
     setQuestion(q);
@@ -409,11 +359,10 @@ function App() {
 
   const sampleQuestions = [
     "Why are you the right person for an AI/Robotics role?",
-    "Check availability for a call on 2026-06-12",
     "Tell me about the Sana-V project architecture and tools",
     "What is the tech stack, purpose, and design tradeoffs of your EyeNav repository?",
     "Show details of your Next_education_ai_mentor_DRL_project repo and what you'd do differently",
-    "Book a call: Name Vasanth, Email avk07373@gmail.com, Slot 2026-06-12 10:00"
+    "Explain how your Unified Compliance System is designed and built"
   ];
 
   return (
@@ -451,7 +400,7 @@ function App() {
                 {dbStatus}
               </span>
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Database: nilzha-db</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">Database: vasanthakumar</div>
           </div>
         </div>
       </header>
@@ -459,8 +408,8 @@ function App() {
       {/* Main Section */}
       <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch flex-1">
         
-        {/* LEFT COLUMN: Chat Interface (7/12 cols) */}
-        <main className="lg:col-span-7 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl p-4 md:p-6 shadow-xl backdrop-blur-xl justify-between min-h-[600px]">
+        {/* LEFT COLUMN: Chat Interface (8/12 cols) */}
+        <main className="lg:col-span-8 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl p-4 md:p-6 shadow-xl backdrop-blur-xl justify-between min-h-[600px]">
           
           {/* Chat Header Status & Voice Selector */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pb-3 border-b border-slate-800/60 mb-4">
@@ -663,173 +612,42 @@ function App() {
           </div>
         </main>
 
-        {/* RIGHT COLUMN: D1 SQL Monitor & Booking Help (5/12 cols) */}
-        <aside className="lg:col-span-5 flex flex-col gap-6">
+        {/* RIGHT COLUMN: D1 SQL Monitor (4/12 cols) */}
+        <aside className="lg:col-span-4 flex flex-col">
           
           {/* Box 1: SQL Monitor / Live Database Dashboard */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-lg backdrop-blur-xl flex flex-col h-[380px]">
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-lg backdrop-blur-xl flex flex-col flex-1 min-h-[500px]">
             <div className="flex justify-between items-center border-b border-slate-850 pb-3 mb-3">
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 📂 Cloudflare D1 SQL Monitor
               </h2>
-              {/* Tabs */}
-              <div className="flex gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
-                <button
-                  onClick={() => setActiveTab("logs")}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                    activeTab === "logs" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  chat_logs
-                </button>
-                <button
-                  onClick={() => setActiveTab("bookings")}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                    activeTab === "bookings" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  bookings
-                </button>
-              </div>
             </div>
 
             {/* SQL Terminal Preview */}
             <div className="bg-slate-950 rounded-xl p-2.5 border border-slate-850 text-[10px] font-mono text-indigo-400 mb-3 select-none flex items-center gap-1">
               <span className="text-emerald-500">d1-sql&gt;</span>
               <span>
-                SELECT * FROM {activeTab === "logs" ? "chat_logs" : "bookings"} ORDER BY timestamp DESC LIMIT 20;
+                SELECT * FROM chat_logs ORDER BY timestamp DESC LIMIT 20;
               </span>
             </div>
 
             {/* Data Output */}
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">
-              {activeTab === "logs" ? (
-                chatLogs.length === 0 ? (
-                  <p className="text-slate-500 italic text-center py-8">No queries logged yet in chat_logs table.</p>
-                ) : (
-                  chatLogs.map((log) => (
-                    <div key={log.id} className="bg-slate-950/40 border border-slate-850 rounded-xl p-3 space-y-1">
-                      <div className="flex justify-between text-[9px] text-slate-500">
-                        <span>Query ID: #{log.id}</span>
-                        <span>{new Date(log.timestamp).toLocaleString()}</span>
-                      </div>
-                      <p className="text-indigo-300 font-semibold break-words">Q: {log.question}</p>
-                      <p className="text-slate-400 line-clamp-2 break-words">A: {log.answer}</p>
-                    </div>
-                  ))
-                )
+              {chatLogs.length === 0 ? (
+                <p className="text-slate-500 italic text-center py-8">No queries logged yet in chat_logs table.</p>
               ) : (
-                bookings.length === 0 ? (
-                  <p className="text-slate-500 italic text-center py-8">No scheduled calls found in bookings table.</p>
-                ) : (
-                  bookings.map((b) => (
-                    <div key={b.id} className="bg-slate-950/40 border border-slate-850 rounded-xl p-3 space-y-1">
-                      <div className="flex justify-between text-[9px] text-slate-500">
-                        <span>Booking ID: #{b.id}</span>
-                        <span>{new Date(b.timestamp).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between font-bold text-slate-250">
-                        <span>👤 {b.name}</span>
-                        <span className="text-indigo-400 font-mono text-[10px]">{b.booking_time}</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400 break-words">📧 {b.email}</p>
-                      {b.purpose && <p className="text-[10px] text-slate-500 italic break-words">💬 {b.purpose}</p>}
+                chatLogs.map((log) => (
+                  <div key={log.id} className="bg-slate-950/40 border border-slate-850 rounded-xl p-3 space-y-1">
+                    <div className="flex justify-between text-[9px] text-slate-500">
+                      <span>Query ID: #{log.id}</span>
+                      <span>{new Date(log.timestamp).toLocaleString()}</span>
                     </div>
-                  ))
-                )
+                    <p className="text-indigo-300 font-semibold break-words">Q: {log.question}</p>
+                    <p className="text-slate-400 line-clamp-3 break-words">A: {log.answer}</p>
+                  </div>
+                ))
               )}
             </div>
-          </div>
-
-          {/* Box 2: Quick Booking Assistance Form */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-lg backdrop-blur-xl flex flex-col">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-350 border-b border-slate-850 pb-3 mb-4 flex items-center gap-2">
-              🗓️ Direct Agent Booking Assistant
-            </h2>
-            
-            <form onSubmit={handleQuickBook} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Your Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="John Doe"
-                    value={bookName}
-                    onChange={(e) => setBookName(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 focus:outline-none focus:border-indigo-500 text-xs text-slate-300"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Your Email</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="john@example.com"
-                    value={bookEmail}
-                    onChange={(e) => setBookEmail(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 focus:outline-none focus:border-indigo-500 text-xs text-slate-300"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Select Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={bookDate}
-                    onChange={(e) => setBookDate(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 focus:outline-none focus:border-indigo-500 text-xs text-slate-300"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Timeslot</label>
-                  <select
-                    required
-                    value={bookTime}
-                    onChange={(e) => setBookTime(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 focus:outline-none focus:border-indigo-500 text-xs text-slate-300"
-                  >
-                    <option value="">Choose slot</option>
-                    <option value="09:00">09:00 AM IST</option>
-                    <option value="10:00">10:00 AM IST</option>
-                    <option value="11:00">11:00 AM IST</option>
-                    <option value="14:00">02:00 PM IST</option>
-                    <option value="15:00">03:00 PM IST</option>
-                    <option value="16:00">04:00 PM IST</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Purpose (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Project interview discussion"
-                  value={bookPurpose}
-                  onChange={(e) => setBookPurpose(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 focus:outline-none focus:border-indigo-500 text-xs text-slate-300"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={bookLoading}
-                className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-indigo-600/10 transition-all"
-              >
-                {bookLoading ? "Sending booking request to Agent..." : "Submit Booking to Agent"}
-              </button>
-
-              {bookMessage && (
-                <p className={`text-[10px] text-center font-semibold mt-2 ${
-                  bookMessage.startsWith("❌") ? "text-red-400" : "text-emerald-400"
-                }`}>
-                  {bookMessage}
-                </p>
-              )}
-            </form>
           </div>
         </aside>
       </div>
