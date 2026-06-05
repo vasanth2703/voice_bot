@@ -25,7 +25,6 @@ interface Booking {
 
 function App() {
   const [question, setQuestion] = useState("");
-  const [interimTranscript, setInterimTranscript] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
@@ -108,7 +107,6 @@ function App() {
         setIsListening(true);
         setError("");
         setQuestion("");
-        setInterimTranscript("");
         transcriptRef.current = "";
       };
 
@@ -129,7 +127,6 @@ function App() {
             return nextText;
           });
         }
-        setInterimTranscript(interim);
       };
 
       rec.onerror = (event: any) => {
@@ -146,7 +143,6 @@ function App() {
 
       rec.onend = () => {
         setIsListening(false);
-        setInterimTranscript("");
         const finalQuery = transcriptRef.current;
         if (finalQuery.trim() && askBotRef.current) {
           askBotRef.current(finalQuery);
@@ -352,7 +348,6 @@ function App() {
     stopSpeaking();
     stopListening();
     setQuestion("");
-    setInterimTranscript("");
     setHistory([]);
     setMessages([
       {
@@ -582,18 +577,20 @@ function App() {
 
           {/* Voice Equalizer Visualizer */}
           {(isListening || isSpeaking) && (
-            <div className="flex justify-center items-center gap-1 h-6 mb-3">
-              <span className="text-[10px] font-semibold text-slate-500 mr-2">
-                {isListening ? "RECORDING MICROPHONE:" : "PLAYING AUDIO:"}
-              </span>
-              <div className="waveform-bar"></div>
-              <div className="waveform-bar"></div>
-              <div className="waveform-bar"></div>
-              <div className="waveform-bar"></div>
-              <div className="waveform-bar"></div>
-              <div className="waveform-bar"></div>
-              <div className="waveform-bar"></div>
-              <div className="waveform-bar"></div>
+            <div className="flex flex-col items-center justify-center gap-2 mb-3">
+              <div className="flex justify-center items-center gap-1 h-6">
+                <span className="text-[10px] font-semibold text-slate-500 mr-2">
+                  {isListening ? "RECORDING MICROPHONE:" : "PLAYING AUDIO:"}
+                </span>
+                <div className="waveform-bar"></div>
+                <div className="waveform-bar"></div>
+                <div className="waveform-bar"></div>
+                <div className="waveform-bar"></div>
+                <div className="waveform-bar"></div>
+                <div className="waveform-bar"></div>
+                <div className="waveform-bar"></div>
+                <div className="waveform-bar"></div>
+              </div>
             </div>
           )}
 
