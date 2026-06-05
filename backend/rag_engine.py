@@ -5,6 +5,8 @@ from typing import List, Dict, Any
 import re
 from dotenv import load_dotenv
 
+import key_manager
+
 # Load environment variables
 load_dotenv()
 
@@ -15,13 +17,8 @@ EMBEDDING_MODEL_NAME = "models/gemini-embedding-001"
 
 class RAGEngine:
     def __init__(self):
-        # 1. Configure Gemini
-        api_key = os.getenv("GEMINI_API_KEY")
-        if api_key:
-            genai.configure(api_key=api_key)
-            print("Gemini API configured successfully.")
-        else:
-            print("WARNING: GEMINI_API_KEY is not set in environment.")
+        # 1. Configure Gemini keys
+        key_manager.init_keys()
 
         # 2. Initialize ChromaDB
         print(f"Initializing ChromaDB at: {DB_DIR}...")
@@ -82,7 +79,8 @@ class RAGEngine:
         
         # Generate embeddings using Gemini API
         print("Embedding chunks with Gemini API...")
-        res = genai.embed_content(
+        res = key_manager.execute_with_retry(
+            genai.embed_content,
             model=EMBEDDING_MODEL_NAME,
             content=chunks,
             task_type="retrieval_document"
@@ -116,7 +114,8 @@ class RAGEngine:
             return []
             
         # Encode query using Gemini API
-        res = genai.embed_content(
+        res = key_manager.execute_with_retry(
+            genai.embed_content,
             model=EMBEDDING_MODEL_NAME,
             content=query,
             task_type="retrieval_query"

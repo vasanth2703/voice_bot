@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 import database
 from rag_engine import RAGEngine
+import key_manager
 
 # Load environment variables
 load_dotenv()
@@ -128,10 +129,10 @@ async def chat_endpoint(payload: ChatRequest):
     if not message and not history:
         raise HTTPException(status_code=400, detail="Message or history is required.")
         
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    api_keys = key_manager.get_api_keys()
+    if not api_keys:
         return {
-            "reply": "I'd love to answer that, but my connection is currently missing its API key configuration. Please configure GEMINI_API_KEY as an environment variable.",
+            "reply": "I'd love to answer that, but my connection is currently missing its API key configuration. Please configure GEMINI_API_KEY or GEMINI_API_KEYS as an environment variable.",
             "history": [msg.dict() for msg in history]
         }
 
@@ -176,7 +177,8 @@ async def chat_endpoint(payload: ChatRequest):
             contents = to_gemini_format(history)
             
             # Request generation
-            response = model.generate_content(
+            response = key_manager.execute_with_retry(
+                model.generate_content,
                 contents=contents,
                 generation_config={"temperature": 0.2, "max_output_tokens": 1000}
             )
