@@ -32,3 +32,11 @@ dist-ssr
 
 # Ignore local lock file to bypass clean installs
 package-lock.json
+
+# Python & Backend temporary files
+**/__pycache__/
+**/*.pyc
+backend/venv/
+backend/.env
+backend/voice_bot.db
+backend/chromadb_store/

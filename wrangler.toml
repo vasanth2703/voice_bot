@@ -5,3 +5,9 @@ compatibility_date = "2026-05-28"
 [assets]
 directory = "./dist"
 binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nilzha-db"
+database_id = "7edeb542-02a5-4270-bc2a-c51e69c48acd"
+
