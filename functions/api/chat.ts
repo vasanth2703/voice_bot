@@ -1,3 +1,5 @@
+import { onRequestGet as handleLogs } from "./logs";
+
 interface Env {
   RENDER_BACKEND_URL?: string;
   ASSETS?: { fetch: typeof fetch };
@@ -32,6 +34,19 @@ export default {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        }
+      });
+    }
+    if (url.pathname === "/api/logs" || url.pathname === "/logs") {
+      if (request.method === "OPTIONS") return handleOptions();
+      if (request.method === "GET") return handleLogs({ env });
+      return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+        status: 405,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type",
         }
       });
