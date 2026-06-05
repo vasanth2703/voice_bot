@@ -11,7 +11,7 @@ load_dotenv()
 # Constants
 DB_DIR = os.path.join(os.path.dirname(__file__), "chromadb_store")
 COLLECTION_NAME = "candidate_knowledge_base"
-EMBEDDING_MODEL_NAME = "models/embedding-001"
+EMBEDDING_MODEL_NAME = "models/gemini-embedding-001"
 
 class RAGEngine:
     def __init__(self):
