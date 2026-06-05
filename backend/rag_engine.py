@@ -1,6 +1,5 @@
 import os
 import chromadb
-from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from typing import List, Dict, Any
 import re
@@ -12,14 +11,18 @@ load_dotenv()
 # Constants
 DB_DIR = os.path.join(os.path.dirname(__file__), "chromadb_store")
 COLLECTION_NAME = "candidate_knowledge_base"
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL_NAME = "models/text-embedding-004"
 
 class RAGEngine:
     def __init__(self):
-        # 1. Initialize SentenceTransformer
-        print(f"Loading SentenceTransformer model: {EMBEDDING_MODEL_NAME}...")
-        self.encoder = SentenceTransformer(EMBEDDING_MODEL_NAME)
-        
+        # 1. Configure Gemini
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            genai.configure(api_key=api_key)
+            print("Gemini API configured successfully.")
+        else:
+            print("WARNING: GEMINI_API_KEY is not set in environment.")
+
         # 2. Initialize ChromaDB
         print(f"Initializing ChromaDB at: {DB_DIR}...")
         self.chroma_client = chromadb.PersistentClient(path=DB_DIR)
@@ -27,14 +30,6 @@ class RAGEngine:
             name=COLLECTION_NAME,
             metadata={"hnsw:space": "cosine"}
         )
-        
-        # 3. Configure Gemini
-        api_key = os.getenv("GEMINI_API_KEY")
-        if api_key:
-            genai.configure(api_key=api_key)
-            print("Gemini API configured successfully.")
-        else:
-            print("WARNING: GEMINI_API_KEY is not set in environment.")
 
     def chunk_text(self, text: str, max_chunk_size: int = 1000, overlap: int = 200) -> List[str]:
         """Split text into overlapping chunks using paragraph and sentence boundaries."""
@@ -85,9 +80,14 @@ class RAGEngine:
         chunks = self.chunk_text(content)
         print(f"Generated {len(chunks)} chunks from knowledge base.")
         
-        # Generate embeddings
-        print("Embedding chunks with SentenceTransformer...")
-        embeddings = self.encoder.encode(chunks, show_progress_bar=True).tolist()
+        # Generate embeddings using Gemini API
+        print("Embedding chunks with Gemini API...")
+        res = genai.embed_content(
+            model=EMBEDDING_MODEL_NAME,
+            content=chunks,
+            task_type="retrieval_document"
+        )
+        embeddings = res['embedding']
         
         # Add to ChromaDB
         ids = [f"chunk_{i}" for i in range(len(chunks))]
@@ -115,8 +115,13 @@ class RAGEngine:
             print("WARNING: ChromaDB collection is empty! No retrieved chunks will be returned.")
             return []
             
-        # Encode query
-        query_embedding = self.encoder.encode([query]).tolist()
+        # Encode query using Gemini API
+        res = genai.embed_content(
+            model=EMBEDDING_MODEL_NAME,
+            content=query,
+            task_type="retrieval_query"
+        )
+        query_embedding = [res['embedding']]
         
         # Query ChromaDB
         results = self.collection.query(

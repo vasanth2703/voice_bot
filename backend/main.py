@@ -27,6 +27,21 @@ app.add_middleware(
 # Initialize RAGEngine
 rag = RAGEngine()
 
+# Automatically populate ChromaDB on startup if empty
+if rag.collection.count() == 0:
+    print("ChromaDB collection is empty. Auto-populating...")
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(backend_dir)
+    kb_path = os.path.join(root_dir, "functions", "api", "knowledge_base.md")
+    if os.path.exists(kb_path):
+        try:
+            rag.populate_database(kb_path)
+            print("Auto-population complete.")
+        except Exception as e:
+            print(f"Failed to auto-populate ChromaDB: {e}")
+    else:
+        print(f"Could not find knowledge_base.md at {kb_path} for auto-population.")
+
 # Pydantic models for request/response validation
 class ChatPart(BaseModel):
     text: Optional[str] = None
