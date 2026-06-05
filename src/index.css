@@ -85,3 +85,22 @@ body {
 .waveform-bar:nth-child(8) { animation: wave 1.0s infinite ease-in-out; animation-delay: 0.25s; }
 .waveform-bar:nth-child(9) { animation: wave 1.2s infinite ease-in-out; animation-delay: 0.4s; }
 .waveform-bar:nth-child(10) { animation: wave 0.8s infinite ease-in-out; animation-delay: 0.05s; }
+
+/* Modal animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

@@ -7,12 +7,6 @@ interface Message {
   isToolCall?: boolean;
 }
 
-interface ChatLog {
-  id: number;
-  question: string;
-  answer: string;
-  timestamp: string;
-}
 
 
 function App() {
@@ -33,9 +27,11 @@ function App() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>("");
 
-  // D1 Logs Dashboard State
-  const [chatLogs, setChatLogs] = useState<ChatLog[]>([]);
-  const [dbStatus, setDbStatus] = useState("Connected");
+
+
+  // Welcome Screen & Input Focus
+  const [showWelcome, setShowWelcome] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const recognitionRef = useRef<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -46,29 +42,7 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking]);
 
-  // Fetch D1 Logs & Bookings
-  const fetchD1Logs = async () => {
-    try {
-      const response = await fetch("/api/logs");
-      if (response.ok) {
-        const data = await response.json();
-        setChatLogs(data.chatLogs || []);
-        setDbStatus("Connected");
-      } else {
-        setDbStatus("Error");
-      }
-    } catch (err) {
-      console.error("Error fetching D1 logs:", err);
-      setDbStatus("Disconnected");
-    }
-  };
 
-  // Poll logs on load and every 8 seconds
-  useEffect(() => {
-    fetchD1Logs();
-    const interval = setInterval(fetchD1Logs, 8000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -267,8 +241,7 @@ function App() {
       setMessages((prev) => [...prev, botMsg]);
       speak(data.reply);
 
-      // Instantly refresh logs & bookings
-      fetchD1Logs();
+
     } catch (err: any) {
       console.error("Chat error:", err);
       setError(err.message || "Connection failed. Please retry.");
@@ -368,60 +341,79 @@ function App() {
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col p-4 md:p-8 bg-grid-pattern selection:bg-indigo-500/30 overflow-hidden">
       
+      {/* Welcome Screen Overlay */}
+      {showWelcome && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl text-center space-y-6 transform animate-scale-up">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
+              <span className="text-3xl">🎙️</span>
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                Talk to Vasanth's AI Agent
+              </h2>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Interact using your voice to hear responses, or cancel to type standard text questions.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowWelcome(false);
+                  startListening();
+                }}
+                className="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
+              >
+                <span>🎙️ Tap to Speak</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowWelcome(false);
+                  setTimeout(() => inputRef.current?.focus(), 100);
+                }}
+                className="w-full py-3 rounded-xl font-semibold text-xs border border-slate-800 hover:bg-slate-850 active:scale-[0.98] text-slate-400 hover:text-slate-200 transition-all"
+              >
+                Cancel to Chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Background Glowing Blurs */}
       <div className="absolute top-1/6 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-indigo-500/10 animate-pulse-glow -z-10 pointer-events-none" />
       <div className="absolute bottom-1/6 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-violet-600/10 animate-pulse-glow -z-10 pointer-events-none" />
 
       {/* Header */}
-      <header className="w-full max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-800/80">
-        <div className="text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-xs font-semibold mb-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping"></span>
-            Cloudflare Workers + D1 RAG Agent
-          </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-violet-400 to-pink-400 bg-clip-text text-transparent">
-            Vasanthakumar A
-          </h1>
-          <p className="text-xs md:text-sm text-slate-400">
-            Interactive AI Assistant grounded in Github repositories & actual resume history.
-          </p>
-        </div>
-
-        {/* Database Status Info */}
-        <div className="flex items-center gap-3 bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 text-xs">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-400">Cloudflare D1:</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                dbStatus === "Connected" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                dbStatus === "Error" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
-                "bg-red-500/10 text-red-400 border border-red-500/20"
-              }`}>
-                {dbStatus}
-              </span>
-            </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Database: vasanthakumar</div>
-          </div>
-        </div>
+      <header className="w-full max-w-4xl mx-auto flex flex-col justify-center items-center text-center mb-8 pb-4 border-b border-slate-800/80">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-violet-400 to-pink-400 bg-clip-text text-transparent mb-2">
+          Vasanthakumar A
+        </h1>
+        <p className="text-xs md:text-sm text-slate-400">
+          Interactive AI Assistant grounded in GitHub repositories & actual resume history.
+        </p>
       </header>
 
       {/* Main Section */}
-      <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch flex-1">
+      <div className="w-full max-w-4xl mx-auto flex flex-col flex-1">
         
-        {/* LEFT COLUMN: Chat Interface (8/12 cols) */}
-        <main className="lg:col-span-8 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl p-4 md:p-6 shadow-xl backdrop-blur-xl justify-between min-h-[600px]">
+        {/* Chat Interface */}
+        <main className="flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl p-4 md:p-6 shadow-xl backdrop-blur-xl justify-between min-h-[600px] flex-1">
           
           {/* Chat Header Status & Voice Selector */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pb-3 border-b border-slate-800/60 mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Agent Status:</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Status:</span>
               {isListening ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/15 text-red-400 border border-red-500/20 animate-pulse">
                   Listening...
                 </span>
               ) : isThinking ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 animate-pulse">
-                  Thinking...
+                  Searching knowledge base...
                 </span>
               ) : isSpeaking ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
@@ -429,7 +421,7 @@ function App() {
                 </span>
               ) : (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
-                  Active & Grounded
+                  Ready
                 </span>
               )}
             </div>
@@ -516,7 +508,7 @@ function App() {
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
-                  <span className="text-[10px] text-slate-500 italic">Accessing knowledge base & executing D1 queries...</span>
+                  <span className="text-[10px] text-slate-500 italic">Searching knowledge base...</span>
                 </div>
               </div>
             )}
@@ -555,10 +547,11 @@ function App() {
             {/* TextInput Field */}
             <div className="flex gap-2">
               <input
+                ref={inputRef}
                 type="text"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder={speechSupported ? "Ask about my repos, resume, or check my calendar..." : "Type your question..."}
+                placeholder={speechSupported ? "Ask about my repos, work history, or technical experience..." : "Type your question..."}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-slate-300 placeholder-slate-600 transition-all"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !isThinking) {
@@ -612,44 +605,6 @@ function App() {
           </div>
         </main>
 
-        {/* RIGHT COLUMN: D1 SQL Monitor (4/12 cols) */}
-        <aside className="lg:col-span-4 flex flex-col">
-          
-          {/* Box 1: SQL Monitor / Live Database Dashboard */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-lg backdrop-blur-xl flex flex-col flex-1 min-h-[500px]">
-            <div className="flex justify-between items-center border-b border-slate-850 pb-3 mb-3">
-              <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                📂 Cloudflare D1 SQL Monitor
-              </h2>
-            </div>
-
-            {/* SQL Terminal Preview */}
-            <div className="bg-slate-950 rounded-xl p-2.5 border border-slate-850 text-[10px] font-mono text-indigo-400 mb-3 select-none flex items-center gap-1">
-              <span className="text-emerald-500">d1-sql&gt;</span>
-              <span>
-                SELECT * FROM chat_logs ORDER BY timestamp DESC LIMIT 20;
-              </span>
-            </div>
-
-            {/* Data Output */}
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">
-              {chatLogs.length === 0 ? (
-                <p className="text-slate-500 italic text-center py-8">No queries logged yet in chat_logs table.</p>
-              ) : (
-                chatLogs.map((log) => (
-                  <div key={log.id} className="bg-slate-950/40 border border-slate-850 rounded-xl p-3 space-y-1">
-                    <div className="flex justify-between text-[9px] text-slate-500">
-                      <span>Query ID: #{log.id}</span>
-                      <span>{new Date(log.timestamp).toLocaleString()}</span>
-                    </div>
-                    <p className="text-indigo-300 font-semibold break-words">Q: {log.question}</p>
-                    <p className="text-slate-400 line-clamp-3 break-words">A: {log.answer}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </aside>
       </div>
 
       {/* Suggested RAG Prompts chips */}
