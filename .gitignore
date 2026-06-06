@@ -39,4 +39,3 @@ package-lock.json
 backend/venv/
 backend/.env
 backend/voice_bot.db
-backend/chromadb_store/

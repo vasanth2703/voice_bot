@@ -77,15 +77,24 @@ class RAGEngine:
         chunks = self.chunk_text(content)
         print(f"Generated {len(chunks)} chunks from knowledge base.")
         
-        # Generate embeddings using Gemini API
-        print("Embedding chunks with Gemini API...")
-        res = key_manager.execute_with_retry(
-            genai.embed_content,
-            model=EMBEDDING_MODEL_NAME,
-            content=chunks,
-            task_type="retrieval_document"
-        )
-        embeddings = res['embedding']
+        # Generate embeddings using Gemini API in batches to respect rate limits
+        print("Embedding chunks with Gemini API (batched)...")
+        import time
+        batch_size = 40
+        embeddings = []
+        for i in range(0, len(chunks), batch_size):
+            batch = chunks[i:i+batch_size]
+            print(f"Embedding batch {i // batch_size + 1} ({len(batch)} chunks)...")
+            res = key_manager.execute_with_retry(
+                genai.embed_content,
+                model=EMBEDDING_MODEL_NAME,
+                content=batch,
+                task_type="retrieval_document"
+            )
+            embeddings.extend(res['embedding'])
+            if i + batch_size < len(chunks):
+                print("Sleeping 25s to respect Gemini API free tier rate limits...")
+                time.sleep(25)
         
         # Add to ChromaDB
         ids = [f"chunk_{i}" for i in range(len(chunks))]
