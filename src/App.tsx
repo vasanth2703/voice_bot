@@ -10,6 +10,7 @@ interface Message {
 
 function App() {
   const [question, setQuestion] = useState("");
+  const [activeMobileTab, setActiveMobileTab] = useState<"chat" | "calendar">("chat");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
@@ -397,11 +398,37 @@ function App() {
         </p>
       </header>
 
+      {/* Mobile Tabs Switcher */}
+      <div className="flex lg:hidden bg-slate-900/80 border border-slate-800/60 p-1.5 rounded-2xl mb-6 w-full max-w-xs sm:max-w-md mx-auto backdrop-blur-md shadow-lg">
+        <button
+          onClick={() => setActiveMobileTab("chat")}
+          className={`flex-grow py-2.5 text-center rounded-xl text-xs font-bold transition-all duration-300 ${
+            activeMobileTab === "chat"
+              ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/20"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          💬 Chat Bot
+        </button>
+        <button
+          onClick={() => setActiveMobileTab("calendar")}
+          className={`flex-grow py-2.5 text-center rounded-xl text-xs font-bold transition-all duration-300 ${
+            activeMobileTab === "calendar"
+              ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/20"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          📅 Scheduler
+        </button>
+      </div>
+
       {/* Main Section - Two-Column Layout */}
       <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 flex-1 items-start">
         
         {/* Left Column: Chat Interface */}
-        <main className="lg:col-span-8 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl p-4 md:p-6 shadow-xl backdrop-blur-xl justify-between h-[650px]">
+        <main className={`lg:col-span-8 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl p-4 md:p-6 shadow-xl backdrop-blur-xl justify-between h-[550px] sm:h-[600px] lg:h-[650px] ${
+          activeMobileTab === "chat" ? "flex" : "hidden lg:flex"
+        }`}>
           
           {/* Chat Header Status & Voice Selector */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pb-3 border-b border-slate-800/60 mb-4">
@@ -605,7 +632,9 @@ function App() {
           </div>
         </main>
         {/* Right Column: Calendar & Booking Sidebar */}
-        <aside className="lg:col-span-4 bg-slate-900/50 border border-slate-800/80 rounded-3xl p-5 md:p-6 shadow-xl backdrop-blur-xl flex flex-col space-y-4 h-[650px] overflow-hidden">
+        <aside className={`lg:col-span-4 bg-slate-900/50 border border-slate-800/80 rounded-3xl p-5 md:p-6 shadow-xl backdrop-blur-xl flex flex-col space-y-4 h-[550px] sm:h-[600px] lg:h-[650px] overflow-hidden ${
+          activeMobileTab === "calendar" ? "flex" : "hidden lg:flex"
+        }`}>
           
           <div className="pb-3 border-b border-slate-800/60 flex items-center justify-between">
             <h2 className="text-md font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent flex items-center gap-1.5">
