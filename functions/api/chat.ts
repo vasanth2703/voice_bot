@@ -218,14 +218,12 @@ async function handleBookRequest(request: Request, env: Env) {
   });
 
   try {
-    const body = (await request.json()) as BookRequestBody;
-    const { name, email, bookingTime, purpose } = body;
-
-    if (!name || !email || !bookingTime) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Missing name, email, or bookingTime." }),
-        { status: 400, headers }
-      );
+    const rawBody = await request.text();
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (e) {
+      return new Response(JSON.stringify({ success: false, error: "Invalid JSON format." }), { status: 400, headers });
     }
 
     const db = env.DB;
@@ -236,8 +234,62 @@ async function handleBookRequest(request: Request, env: Env) {
       );
     }
 
+    // 1. Detect and parse Cal.com Webhook trigger event
+    if (body && body.triggerEvent === "BOOKING_CREATED" && body.payload) {
+      const { startTime, attendees, description, title } = body.payload;
+      const attendee = (attendees && attendees[0]) || {};
+      const wName = attendee.name || "Anonymous User";
+      const wEmail = attendee.email || "";
+      const wPurpose = description || title || "Scheduled via Cal.com Widget";
+
+      // Parse ISO string (e.g. 2026-06-08T14:30:00.000Z) to YYYY-MM-DD HH:MM
+      const dt = new Date(startTime);
+      if (isNaN(dt.getTime())) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid startTime format." }),
+          { status: 400, headers }
+        );
+      }
+
+      // Format as YYYY-MM-DD HH:MM in UTC (Cal.com sends UTC timestamps)
+      const y = dt.getUTCFullYear();
+      const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(dt.getUTCDate()).padStart(2, '0');
+      const hh = String(dt.getUTCHours()).padStart(2, '0');
+      const mm = String(dt.getUTCMinutes()).padStart(2, '0');
+      const formattedBookingTime = `${y}-${m}-${d} ${hh}:${mm}`;
+
+      // Check if slot already booked in D1
+      const existing = await db
+        .prepare("SELECT id FROM bookings WHERE booking_time = ?")
+        .bind(formattedBookingTime)
+        .first();
+
+      if (!existing) {
+        await db
+          .prepare("INSERT INTO bookings (name, email, booking_time, purpose) VALUES (?, ?, ?, ?)")
+          .bind(wName, wEmail, formattedBookingTime, wPurpose)
+          .run();
+        console.log(`Synced Cal.com webhook booking for ${wName}.`);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Webhook processed successfully." }),
+        { status: 200, headers }
+      );
+    }
+
+    // 2. Otherwise process direct manual booking request
+    const { name, email, bookingTime, purpose } = body as BookRequestBody;
+
+    if (!name || !email || !bookingTime) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing name, email, or bookingTime." }),
+        { status: 400, headers }
+      );
+    }
+
     // Check weekday/weekend availability rules in Cloudflare worker
-    // Parse YYYY-MM-DD HH:MM
     const dateParts = bookingTime.split(" ");
     if (dateParts.length !== 2) {
       return new Response(
@@ -257,7 +309,6 @@ async function handleBookRequest(request: Request, env: Env) {
     const day = dt.getDay(); // 0 is Sunday, 6 is Saturday
 
     if (day === 0 || day === 6) { // Weekend
-      // Weekend free hours: 09:00 to 21:00
       const validHours = [
         "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
         "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"
@@ -269,7 +320,6 @@ async function handleBookRequest(request: Request, env: Env) {
         );
       }
     } else { // Weekday
-      // Weekday free hours: after 7:00 PM (19:00, 20:00, 21:00, 22:00)
       const validHours = ["19:00", "20:00", "21:00", "22:00"];
       if (!validHours.includes(timeStr)) {
         return new Response(

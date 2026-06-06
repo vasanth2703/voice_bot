@@ -7,12 +7,6 @@ interface Message {
   isToolCall?: boolean;
 }
 
-interface Booking {
-  name: string;
-  email: string;
-  booking_time: string; // YYYY-MM-DD HH:MM
-  purpose?: string;
-}
 
 function App() {
   const [question, setQuestion] = useState("");
@@ -40,40 +34,14 @@ function App() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const askBotRef = useRef<any>(null);
 
-  // Booking & Calendar State
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(""); // YYYY-MM-DD
-  const [selectedTime, setSelectedTime] = useState<string>(""); // HH:MM
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [bookingName, setBookingName] = useState("");
-  const [bookingEmail, setBookingEmail] = useState("");
-  const [bookingPurpose, setBookingPurpose] = useState("");
-  const [bookingStatus, setBookingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [bookingMessage, setBookingMessage] = useState("");
+
 
   // Auto Scroll Chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking]);
 
-  // Fetch all bookings to compute frontend availability
-  const fetchBookings = async () => {
-    try {
-      const response = await fetch("/api/logs");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.bookings) {
-          setBookings(data.bookings);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch bookings list:", err);
-    }
-  };
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -272,8 +240,7 @@ function App() {
       setMessages((prev) => [...prev, botMsg]);
       speak(data.reply);
 
-      // Re-fetch bookings in case a slot was booked via AI tool call
-      fetchBookings();
+
 
     } catch (err: any) {
       console.error("Chat error:", err);
@@ -313,121 +280,7 @@ function App() {
     setError("");
   };
 
-  // Date Formatting Helper
-  const formatDateStr = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const dayStr = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${dayStr}`;
-  };
 
-  // Check Availability logic for frontend calendar view
-  const getAvailableSlots = (dateStr: string) => {
-    const dateObj = new Date(dateStr);
-    const day = dateObj.getDay(); // 0 is Sunday, 6 is Saturday
-    
-    let standardHours: string[] = [];
-    if (day === 0 || day === 6) {
-      // Weekends: Free all day
-      standardHours = [
-        "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
-        "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"
-      ];
-    } else {
-      // Weekdays: Free after 7 PM IST
-      standardHours = ["19:00", "20:00", "21:00", "22:00"];
-    }
-
-    // Filter out booked slots
-    const bookedForDay = bookings
-      .filter((b) => b.booking_time.startsWith(dateStr))
-      .map((b) => b.booking_time.split(" ")[1]);
-
-    return standardHours.filter((h) => !bookedForDay.includes(h));
-  };
-
-  // Get Calendar days grid
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-    
-    const days: (Date | null)[] = [];
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
-    for (let d = 1; d <= totalDays; d++) {
-      days.push(new Date(year, month, d));
-    }
-    return days;
-  };
-
-  // Navigations for Calendar
-  const prevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
-
-  const formatTime12h = (t24: string) => {
-    const [h, m] = t24.split(":");
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const h12 = hour % 12 || 12;
-    return `${h12}:${m} ${ampm}`;
-  };
-
-  // Handle direct booking from sidebar
-  const handleDirectBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedTime || !bookingName || !bookingEmail) {
-      setBookingStatus("error");
-      setBookingMessage("Please fill in all required fields.");
-      return;
-    }
-
-    setBookingStatus("loading");
-    setBookingMessage("");
-
-    const bookingTime = `${selectedDate} ${selectedTime}`;
-
-    try {
-      const response = await fetch("/api/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: bookingName,
-          email: bookingEmail,
-          bookingTime,
-          purpose: bookingPurpose,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setBookingStatus("success");
-        setBookingMessage(`Successfully booked slot for ${formatTime12h(selectedTime)} on ${selectedDate}!`);
-        // Refresh bookings
-        fetchBookings();
-        // Reset form
-        setBookingName("");
-        setBookingEmail("");
-        setBookingPurpose("");
-        setSelectedDate("");
-        setSelectedTime("");
-      } else {
-        setBookingStatus("error");
-        setBookingMessage(data.error || "Failed to book slot.");
-      }
-    } catch (err: any) {
-      console.error("Booking error:", err);
-      setBookingStatus("error");
-      setBookingMessage("Connection error. Please try again.");
-    }
-  };
 
   // Custom Markdown Parser Function
   const renderFormattedText = (text: string) => {
@@ -751,208 +604,25 @@ function App() {
             </div>
           </div>
         </main>
-
         {/* Right Column: Calendar & Booking Sidebar */}
-        <aside className="lg:col-span-4 bg-slate-900/50 border border-slate-800/80 rounded-3xl p-5 md:p-6 shadow-xl backdrop-blur-xl flex flex-col space-y-4 h-[650px] overflow-y-auto">
+        <aside className="lg:col-span-4 bg-slate-900/50 border border-slate-800/80 rounded-3xl p-5 md:p-6 shadow-xl backdrop-blur-xl flex flex-col space-y-4 h-[650px] overflow-hidden">
           
           <div className="pb-3 border-b border-slate-800/60 flex items-center justify-between">
             <h2 className="text-md font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent flex items-center gap-1.5">
               <span>📅</span> Schedule a Call
             </h2>
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">IST Timezone</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Cal.com Scheduler</span>
           </div>
 
-          {/* Calendar Header Month Control */}
-          <div className="flex items-center justify-between px-1">
-            <button
-              onClick={prevMonth}
-              className="p-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-            >
-              ◀
-            </button>
-            <span className="text-sm font-bold text-slate-300">
-              {currentMonth.toLocaleString('default', { month: 'long' })} {currentMonth.getFullYear()}
-            </span>
-            <button
-              onClick={nextMonth}
-              className="p-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-            >
-              ▶
-            </button>
+          <div className="flex-1 w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
+            <iframe
+              src="https://cal.com/vasanth-vk-khtxhc/secret?theme=dark"
+              width="100%"
+              height="100%"
+              style={{ border: "none" }}
+              title="Schedule a Call"
+            />
           </div>
-
-          {/* Calendar Days of Week Header */}
-          <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-500 tracking-wider">
-            <span>SU</span>
-            <span>MO</span>
-            <span>TU</span>
-            <span>WE</span>
-            <span>TH</span>
-            <span>FR</span>
-            <span>SA</span>
-          </div>
-
-          {/* Calendar Days Grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {getDaysInMonth(currentMonth).map((day, idx) => {
-              if (day === null) {
-                return <div key={`empty-${idx}`} />;
-              }
-
-              const formatted = formatDateStr(day);
-              const todayStr = formatDateStr(new Date());
-              const isPast = formatted < todayStr;
-              const isSelected = formatted === selectedDate;
-              const dayOfWeek = day.getDay();
-              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-              let styleClasses = "aspect-square flex items-center justify-center text-xs rounded-lg font-bold transition-all ";
-              if (isPast) {
-                styleClasses += "text-slate-700 cursor-not-allowed pointer-events-none";
-              } else if (isSelected) {
-                styleClasses += "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 ring-1 ring-indigo-400";
-              } else {
-                styleClasses += "hover:bg-slate-800 cursor-pointer ";
-                if (isWeekend) {
-                  styleClasses += "text-indigo-400 border border-indigo-500/10 bg-indigo-500/5 hover:border-indigo-500/30";
-                } else {
-                  styleClasses += "text-slate-300 border border-slate-850 hover:border-slate-700";
-                }
-              }
-
-              return (
-                <button
-                  key={formatted}
-                  onClick={() => {
-                    setSelectedDate(formatted);
-                    setSelectedTime("");
-                    setBookingMessage("");
-                    setBookingStatus("idle");
-                  }}
-                  disabled={isPast}
-                  className={styleClasses}
-                  title={isWeekend ? "Weekend: Free All Day" : "Weekday: Free after 7 PM"}
-                >
-                  {day.getDate()}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Guide legend */}
-          <div className="flex justify-center gap-4 text-[9px] text-slate-500 font-bold border-b border-slate-850 pb-3">
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded bg-indigo-500/10 border border-indigo-500/30 block"></span>
-              <span>Weekends (All Day)</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded border border-slate-800 block"></span>
-              <span>Weekdays (After 7 PM)</span>
-            </div>
-          </div>
-
-          {/* Timeslot Selector */}
-          {selectedDate && (
-            <div className="space-y-2.5 animate-fade-in">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-400">Available slots on {selectedDate}:</span>
-                <span className="text-[9px] text-slate-500 italic">
-                  {(new Date(selectedDate).getDay() === 0 || new Date(selectedDate).getDay() === 6) 
-                    ? "Weekend (9am - 9pm)" 
-                    : "Weekday (after 7pm)"}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-1.5">
-                {getAvailableSlots(selectedDate).map((time) => {
-                  const isTimeSelected = time === selectedTime;
-                  return (
-                    <button
-                      key={time}
-                      onClick={() => {
-                        setSelectedTime(time);
-                        setBookingMessage("");
-                      }}
-                      className={`py-1.5 text-xs font-bold rounded-lg border transition-all ${
-                        isTimeSelected
-                          ? "bg-violet-600 border-violet-400 text-white shadow-md shadow-violet-600/20"
-                          : "bg-slate-950 border-slate-850 text-slate-300 hover:bg-slate-850 hover:border-slate-700"
-                      }`}
-                    >
-                      {formatTime12h(time)}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {getAvailableSlots(selectedDate).length === 0 && (
-                <p className="text-xs text-amber-500 text-center font-medium bg-amber-500/5 border border-amber-500/10 py-2 rounded-xl">
-                  ⚠️ No available slots. All times are booked on this date.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Booking Form Inputs */}
-          {selectedDate && selectedTime && (
-            <form onSubmit={handleDirectBooking} className="space-y-2.5 pt-2 border-t border-slate-850 animate-scale-up">
-              <span className="text-xs font-bold text-slate-400 block mb-1">Confirm details to book:</span>
-              
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  required
-                  placeholder="Your Full Name *"
-                  value={bookingName}
-                  onChange={(e) => setBookingName(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-850 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-medium"
-                />
-                
-                <input
-                  type="email"
-                  required
-                  placeholder="Your Email Address *"
-                  value={bookingEmail}
-                  onChange={(e) => setBookingEmail(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-850 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-medium"
-                />
-                
-                <input
-                  type="text"
-                  placeholder="Purpose of call (Optional)"
-                  value={bookingPurpose}
-                  onChange={(e) => setBookingPurpose(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-850 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-medium"
-                />
-              </div>
-
-              {bookingMessage && (
-                <p className={`text-xs py-1.5 rounded-lg text-center font-bold ${
-                  bookingStatus === "success" 
-                    ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" 
-                    : "bg-red-500/10 border border-red-500/20 text-red-400"
-                }`}>
-                  {bookingMessage}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={bookingStatus === "loading"}
-                className="w-full py-2.5 font-bold text-xs bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-lg hover:from-indigo-500 hover:to-violet-500 transition-all flex items-center justify-center gap-1.5"
-              >
-                {bookingStatus === "loading" ? "Processing..." : "Confirm Booking"}
-              </button>
-            </form>
-          )}
-
-          {/* Simple Recent Bookings list */}
-          {!selectedDate && (
-            <div className="flex-1 flex flex-col justify-center items-center text-center text-slate-500 px-4 space-y-2 pt-8">
-              <span className="text-2xl">📅</span>
-              <p className="text-xs font-semibold">Select any highlighted date to check available timeslots and book a call.</p>
-            </div>
-          )}
 
         </aside>
 
