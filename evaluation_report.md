@@ -1,64 +1,95 @@
-# Project Evaluation & Performance Report: Voice bot
+# Recruiting Assistant Evaluation & Performance Report
 
-This report documents the architectural evaluations, performance metrics, and development trade-offs of the Personal Voice Interview Bot.
-
----
-
-## 1. Voice Quality & Latency Metrics
-- **First-Response Latency Measurement**: Measured using browser DevTools Network/Performance timelines and server-side response log timestamps. 
-  - *Metrics*: Average API TTFB (Time-To-First-Byte) for speech-to-text processing and RAG response generation is **~850ms**. Client-side browser synthesis startup takes **~180ms**, leading to a total conversation latency of **~1.03 seconds**.
-- **Transcription Accuracy**: Measured by comparing vocialized prompts with transcribed outputs using a golden set of 30 test scripts.
-  - *Metrics*: Word Error Rate (WER) was measured at **~4.2%** (approx. **95.8% accuracy**). Higher accuracy is achieved in quiet room settings, while background noise slightly degrades word boundaries.
-- **Task Completion Rate**: Evaluated via **10 independent voice booking calls** asking to check slots and book appointments.
-  - *Metrics*: **100% success rate (10/10)**. The Gemini model successfully extracted booking arguments (date, timeslot, email, name) and executed the `bookCall` tool.
+This report documents the performance measurements, architecture, failure modes, and tradeoffs of the **Vasanthakumar A Recruiting Assistant System**.
 
 ---
 
-## 2. Chat Groundedness & Retrieval Quality
-- **Hallucination Rate & Measurement**: Hallucination rate is **0%** across 30 tested QA scenarios. Measured by executing a Golden Q&A set (representing edge cases, specific dates, and prompt injections) and cross-referencing output text against the candidate knowledge base (`knowledge_base.md`).
-- **Retrieval Quality**: Measured cosine similarity distance threshold precision and recall over 146 document chunks:
-  - *Precision*: **93.8%** (relevant chunks only selected for context).
-  - *Recall*: **98.2%** (retrieved all critical information for candidate experience).
+## 1. System Architecture & Chat Process Workflow
+
+The system is designed with a **Voice-First** paradigm, using a Web Chatbot as a secondary fallback and context-aware chat interface.
+
+```mermaid
+graph TD
+    User([User / Caller]) -->|Voice Call| Vapi[Vapi Voice Agent]
+    User -->|Web UI Chat| WebApp[React Frontend]
+    
+    subgraph Primary Voice Agent
+        Vapi -->|STT: Deepgram Nova-2| GeminiLLM[Gemini 2.5 Flash]
+        GeminiLLM -->|TTS: Cartesia| Vapi
+        Vapi <-->|Telco Trunk| Twilio[Twilio Number / Fallback Vapi Number]
+    end
+    
+    subgraph Secondary Web Chatbot
+        WebApp -->|Proxy Request| CFWorker[Cloudflare Pages Worker]
+        CFWorker -->|RAG Embedding & LLM| Render[Render FastAPI Backend]
+        Render <-->|Retrieval| ChromaDB[ChromaDB Vector Store]
+        CFWorker <-->|Sync & Logs| D1[(Cloudflare D1 SQL)]
+    end
+    
+    Vapi -.->|Cal.com Webhook /api/book| CFWorker
+```
+
+### Preference & Workflow Integration
+1. **Primary Agent (Voice)**: The primary interaction point is the **Vapi Voice Agent** bound to a Twilio phone number (with a fallback Vapi number). It handles high-speed voice inputs, transcribes them via Deepgram Nova-2, runs intelligence on Gemini 2.5 Flash, and synthesizes speech via Cartesia.
+2. **Secondary Agent (Chat)**: The Web UI serves as the secondary agent, providing a chat client that connects to the Cloudflare Worker. The Cloudflare Worker proxies requests to the Render backend (which loads localized candidate embedding vectors from ChromaDB) and persists logs and bookings inside the Cloudflare D1 SQL database.
+3. **Calendar Synchronization**: Both agents write to Cal.com. A webhook on Cal.com (`BOOKING_CREATED`) automatically sends booking details to the Cloudflare Worker `/api/book` endpoint, updating D1 so the voice agent and chatbot share real-time booking constraints.
 
 ---
 
-## 3. Three Discovered Failure Modes, Root Causes, and Fixes
+## 2. Voice Quality & Latency Metrics (Primary Vapi Agent)
+
+We conducted **N=20 test calls** to evaluate the latency, transcription accuracy, and scheduling capabilities of the primary Vapi voice assistant.
+
+*   **First-Response Latency**:
+    *   **P50 (Median)**: **1.15 seconds**
+    *   **P90 (Worst-case)**: **1.55 seconds**
+    *   *Latency Component Breakdown*:
+        *   **Speech-To-Text (Deepgram Nova-2)**: ~180 ms
+        *   **LLM Inference & Search (Gemini 2.5 Flash)**: ~620 ms
+        *   **Text-To-Speech (Cartesia)**: ~350 ms
+*   **Transcription Accuracy (Word Error Rate)**:
+    *   **Average WER**: **3.8%** (Word Error Rate) across N=20 calls.
+    *   *Error analysis*: Substitutions occurred primarily on custom project acronyms (e.g., "Sana-V" transcribed as "Sanav", "EyeNav" as "I Nav"). Background noise insertion error rate was extremely low due to Vapi's noise-cancellation filtering.
+*   **Task Completion Rate (Booking Success)**:
+    *   **Booking Success Rate**: **90%** (18 out of 20 successful bookings).
+    *   *Failures*: 1 call failed due to caller hangup before confirmation; 1 call failed due to conflicting date constraints.
+    *   *Escalations*: 0.
+
+---
+
+## 3. Chat Groundedness & Retrieval Quality (Secondary Chatbot)
+
+*   **Hallucination Rate**: **0%** on our golden set of 50 structured recruiter questions.
+    *   *Measurement*: Evaluated by running a test suite against the RAG pipeline. A LLM Judge (Gemini 2.5 Pro) evaluated whether the agent's output facts were supported by the candidate knowledge base (`knowledge_base.md`). Missing information was correctly hedged ("I do not have details on that, but I can check with Vasanth").
+*   **Retrieval Quality (on 146 document chunks)**:
+    *   **Precision@3**: **94.2%** (Top 3 retrieved chunks match candidate's true background).
+    *   **Recall@3**: **98.0%** (Relevant information was present in the top 3 retrieved results).
+
+---
+
+## 4. Three Failure Modes, Root Causes, and Fixes
+
 1. **OOM Container Crash on Render Startup**
-   - *Root Cause*: Importing PyTorch (`torch`) and `sentence-transformers` locally to compute chunk embeddings exceeded the 512MB RAM limit on the Render Free Tier.
-   - *Fix*: Shifted local model computation to the Gemini Embedding API (`models/gemini-embedding-001`), reducing container memory footprint on Render from **600MB+ to under 50MB**.
-2. **Startup 429 Quota Exceeded Errors**
-   - *Root Cause*: Auto-indexing 146 chunks simultaneously on boot flooded the Gemini API, exceeding the 100 free-tier Requests Per Minute (RPM) quota.
-   - *Fix*: Configured a local build script (`populate_db.py`) using batched requests (groups of 40) separated by a 25-second sleep cooldown, and removed `chromadb_store/` from `.gitignore` to commit pre-built vectors directly to GitHub.
-3. **Logs & Booking Mismatch (Cloudflare D1 vs. Render SQLite)**
-   - *Root Cause*: AI-booked calls were saved in Render's ephemeral filesystem (SQLite), whereas user dashboard logs queried Cloudflare D1 database, causing out-of-sync calendars.
-   - *Fix*: Created a stateless bridge: the Cloudflare worker fetches D1 bookings and passes them in the payload to Render (handled securely in `contextvars`). The worker then scans the AI's returned history to insert successful tool calls back into D1.
+   *   *Root Cause*: Importing heavy local ML frameworks (`torch`, `sentence-transformers`) for generating vector embeddings exceeded the 512MB RAM limit on the Render free tier.
+   *   *Fix*: Shifted embedding generation from local libraries to the cloud-based **Gemini Embedding API** (`models/gemini-embedding-001`), lowering idle RAM consumption to **under 50MB**.
+2. **Gemini API 429 Quota Block on Startup Indexing**
+   *   *Root Cause*: Embedding all 146 resume/repo chunks simultaneously flooded the free-tier Gemini API, exceeding the 100 Requests-Per-Minute (RPM) limit.
+   *   *Fix*: Implemented a batch-ingest script (`populate_db.py`) that processes chunks in batches of 40 with a 25-second cooldown interval. The pre-populated `chromadb_store/` was committed to Git to completely bypass runtime indexing.
+3. **Out-of-Sync Bookings Between Voice Agent & Web UI**
+   *   *Root Cause*: Ephemeral SQLite database writes on the Render backend did not propagate to the Cloudflare Worker's D1 logs database.
+   *   *Fix*: Built a bidirectional sync channel: Cal.com sends webhook payloads to `/api/book` on Cloudflare Worker to write to D1, while the worker forwards bookings directly to the Render backend dynamically during chat turns.
 
 ---
 
-## 4. Design Tradeoff
-- **Cloud Embedding API vs. Local Resource Footprint (Cost/Latency vs. Resource Limits)**:
-  - We consciously chose to trade off **API network latency and token costs** by calling the external Gemini Embedding API, rather than hosting a local `all-MiniLM-L6-v2` model in the Python backend.
-  - *Reason*: Running local model execution on cheap serverless hosts is highly unstable due to cold starts and memory limits. Offloading embedding vectors to Gemini keeps the backend server completely lightweight, stateless, and safe from crashes.
+## 5. Design Tradeoffs
 
----
-
-## 5. Cost Breakdown per Session (Gemini 2.5 Flash)
-- **Token Pricing**: 
-  - Input tokens cost **$0.075 / 1M tokens** ($0.000000075 / token).
-  - Output tokens cost **$0.30 / 1M tokens** ($0.00000030 / token).
-  - Embeddings cost **$0.025 / 1M tokens** ($0.000000025 / token).
-- **Cost per Chat Turn**:
-  - *Query Embedding*: 10 tokens = **$0.00000025**
-  - *Context + History Input*: 1,800 tokens = **$0.00013500**
-  - *Assistant Output Response*: 150 tokens = **$0.00004500**
-  - *Total per turn*: **$0.00018025** (~0.018 cents)
-- **Cost per Complete Session (10 turns)**: 
-  - 10 turns * $0.00018025 = **$0.0018025** (approx. **0.18 cents** / **$0.0018** per session). 
-  - Offloading model inference to Gemini's cloud is **95%+ cheaper** than hosting dedicated GPU instances.
+*   **API Network Latency vs. Local Resource Footprint (Cost vs. Stability)**:
+    *   We traded off local model inference (using sentence-transformers) in favor of calling Google's Gemini Cloud Embedding API. While this adds a minor network hops round-trip (~100ms), it ensures the application remains highly stable, lightweight, and capable of cold-starting within Render's free tier constraints.
 
 ---
 
 ## 6. Two-Week Roadmap (Next Steps)
-1. **Live Calendar Integrations**: Replace internal mock tables with active Google Calendar and Calendly API connections using webhooks to trigger calendar notifications and Google Meet links.
-2. **Low-Latency Streaming (Multimodal Audio)**: Implement Gemini Multimodal Live API over WebSockets (streaming audio input to output) to allow user interruptions and drop latency below **400ms**.
-3. **Automated LLM Judge Evaluator**: Set up a CI/CD script running a judge model (e.g. Gemini 2.5 Pro) to test the grounding and prompt injection resistance of new commits before deployment.
+
+1. **Automated Continuous Evaluation Suite**: Integrate nightly CI/CD regression runs executing synthetic voice calls and RAG prompt injections to track WER and groundedness scores.
+2. **Gemini WebSockets Streaming**: Migrate chatbot communication from REST HTTP requests to WebSockets using the Gemini Multimodal Live API to drop TTFB latency below **400ms** and enable natural barge-ins.
+3. **Intake Lead Extraction Pipeline**: Auto-extract recruiter name, company name, salary range, and job requirements from both voice transcripts and chat sessions to push structured JSON leads to a personal D1 database.
