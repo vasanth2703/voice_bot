@@ -74,6 +74,15 @@ CP Plus CCTV Camera (AI Pipeline).
 Leadership & Business: Team Management, Startup Scaling, Marketing Strategies, Educational Campaigns
 Languages: Tamil (Native), English (Fluent)
 
+## PERSONAL EXPERIENCE & AUTOMATION SPECIALIZATION (n8n & Chatbots)
+- **n8n Automation Expert**: Hands-on experience building, scaling, and managing complex workflow automations using n8n.
+  - Successfully self-hosted and managed multiple n8n server instances (on cloud platforms like Render, Railway, AWS/EC2), ensuring high availability, persistent volume storage for workflow execution data, and secure key management.
+  - Built production-ready multi-agent workflows, integrating LLMs (Gemini, OpenAI), vector stores, API nodes, webhooks, and third-party systems.
+- **Chatbot & Live Website Deployment**: Specialized in deploying custom chatbots and automated virtual assistants directly on business websites.
+  - Built custom scripts and middleware to integrate AI chatbots via web components and dynamic chat widgets.
+  - Designed automated backend synchronization so that chatbot logs, leads, and customer analytics are directly updated in web dashboards, CRM systems, and Google Sheets in real-time.
+  - Experienced with server administration, domain configuration, CORS policies, secure proxy servers, and webhook configurations to ensure robust live communication channels.
+
 ---
 
 # PUBLIC GITHUB REPOSITORIES

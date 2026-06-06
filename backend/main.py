@@ -56,6 +56,13 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: Optional[str] = None
     history: Optional[List[ChatMessage]] = []
+    bookings: Optional[List[Dict[str, Any]]] = None
+
+class BookRequest(BaseModel):
+    name: str
+    email: str
+    bookingTime: str
+    purpose: Optional[str] = ""
 
 # Tool declarations for Gemini
 def checkAvailability(date: str) -> Dict[str, Any]:
@@ -137,6 +144,11 @@ async def chat_endpoint(payload: ChatRequest):
         }
 
     try:
+        # Set request-scoped bookings in database
+        if payload.bookings is not None:
+            database.set_request_bookings(payload.bookings)
+        else:
+            database.set_request_bookings(None)
         # 1. RAG Vector Search: Query ChromaDB with user's query
         query_text = message if message else ""
         if not query_text and history:
@@ -165,7 +177,8 @@ async def chat_endpoint(payload: ChatRequest):
         # 4. Initialize the Gemini Model
         model = genai.GenerativeModel(
             model_name="gemini-2.5-flash",
-            system_instruction=system_instruction
+            system_instruction=system_instruction,
+            tools=[checkAvailability, bookCall]
         )
         
         # 5. Tool-calling Loop (max 5 iterations)
@@ -261,6 +274,34 @@ async def chat_endpoint(payload: ChatRequest):
             "error": str(e),
             "history": [msg.dict() for msg in history]
         }
+    finally:
+        database.set_request_bookings(None)
+
+@app.post("/api/book")
+async def book_endpoint(payload: BookRequest):
+    res = database.book_call(
+        name=payload.name,
+        email=payload.email,
+        booking_time=payload.bookingTime,
+        purpose=payload.purpose
+    )
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error"))
+    return res
+
+@app.post("/api/populate")
+async def populate_endpoint():
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(backend_dir)
+    kb_path = os.path.join(root_dir, "functions", "api", "knowledge_base.md")
+    if not os.path.exists(kb_path):
+        raise HTTPException(status_code=404, detail="knowledge_base.md not found")
+    try:
+        rag.populate_database(kb_path)
+        return {"status": "success", "message": f"Successfully populated database with {rag.collection.count()} chunks."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn
