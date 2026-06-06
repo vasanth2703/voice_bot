@@ -1,126 +1,105 @@
-# 🎙️ Personal Voice Interview Bot
+# 🎙️ Personal Voice Interview Bot & Interactive Scheduler
 
-A premium, interactive, and voice-enabled web application that allows users to ask professional questions and hear replies in the first person representing the candidate. Built using **React, TypeScript, Tailwind CSS**, and powered by **Cloudflare Pages Functions** and the **Gemini 2.5 Flash API**.
-
----
-
-## ✨ Features
-
-- **🗣️ Speech-to-Text**: Click the circular microphone and speak. Uses browser Web Speech API `SpeechRecognition` to instantly transcribe in real-time.
-- **🔊 Text-to-Speech**: Seamless, high-quality audio responses using the browser's `SpeechSynthesis` API.
-- **🎙️ Voice Customization**: An active dropdown listing all available English system voices on your device, enabling a personalized listening experience.
-- **📱 Text Fallback**: An elegant manual text field allows fully-featured interaction for users without microphones or on unsupported browsers.
-- **🎨 Modern Premium UI**: Designed with a sleek dark slate background, translucent glassmorphism cards, glowing status waves, and equalizer voice waveforms.
-- **⚡ Interactive Chips**: Tap pre-loaded candidate profile chips (Life Story, Superpower, Growth Areas, Coworker Misconceptions, Limits) to immediately trigger bot replies.
-- **🔒 Backend Proxy API**: Cloudflare Pages Function proxying requests to Gemini securely, hiding your `GEMINI_API_KEY` from the frontend completely.
+A premium, interactive, and voice-enabled web application that allows users to ask professional questions and hear replies in the first person representing the candidate. It integrates real-time similarity search (RAG) over the candidate's resume/repositories and features an interactive booking calendar UI.
 
 ---
 
-## 🛠️ Local Development
+## 🏗️ System Architecture & Dataflow
 
-Follow these steps to run the project locally.
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- A **Gemini API Key** (Get one for free at [Google AI Studio](https://aistudio.google.com/))
-
-### 1. Installation
-Clone or navigate to the directory and run:
-```bash
-npm install
-```
-
-### 2. Running Locally (Frontend)
-Run the Vite development server:
-```bash
-npm run dev
-```
-Open [http://localhost:5173/](http://localhost:5173/) in your browser.
-
-> [!NOTE]
-> Since the backend proxy `/api/chat` is a Cloudflare Pages Function, standard Vite dev server does not serve it natively without running a proxy or using Wrangler. For complete local testing of the frontend and backend together, use **Wrangler** (the official Cloudflare CLI).
-
-### 3. Running with Wrangler (Full-Stack Local Testing)
-To test both frontend and backend functions locally:
-```bash
-# Run the application through Wrangler Pages emulator
-npx wrangler pages dev dist --compatibility-date=2024-01-01 --binding GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-```
-Or build the assets first, then start wrangler:
-```bash
-npm run build
-npx wrangler pages dev dist --binding GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-```
-
----
-
-## 🚀 Cloudflare Pages Deployment Steps
-
-Follow these exact steps to publish your bot live on a free `.pages.dev` subdomain:
-
-1. **Create a GitHub Repository**:
-   - Go to [GitHub](https://github.com/) and create a new public or private repository.
-2. **Push the Project**:
-   - Initialize git in your project directory:
-     ```bash
-     git init
-     git add .
-     git commit -m "Initial commit: Personal Voice Interview Bot"
-     git branch -M main
-     git remote add origin <your-github-repo-url>
-     git push -u origin main
-     ```
-3. **Go to Cloudflare Dashboard**:
-   - Log in to your [Cloudflare Dashboard](https://dash.cloudflare.com/).
-4. **Create Pages Project**:
-   - Go to **Workers & Pages** in the left sidebar.
-   - Click **Create** and select **Pages** -> **Connect to Git**.
-5. **Connect GitHub Repo**:
-   - Choose your GitHub account and select your repository. Click **Begin setup**.
-6. **Configure Build Settings**:
-   - **Framework Preset**: `Vite` (or None)
-   - **Build Command**: `npm run build`
-   - **Build Output Directory**: `dist`
-7. **Add Environment Variable**:
-   - Scroll down to the **Environment variables (advanced)** section.
-   - Add a new variable:
-     - **Variable name**: `GEMINI_API_KEY`
-     - **Value**: *[Paste your Gemini API key from Google AI Studio]*
-8. **Deploy**:
-   - Click **Save and Deploy**. Cloudflare will compile your React site and compile the `functions/api/chat.ts` API endpoint automatically.
-9. **Access Your Live App**:
-   - Once complete, Cloudflare will provide a production URL (e.g., `https://personal-voice-bot.pages.dev`).
-10. **Submit**:
-    - Copy your live pages.dev URL and submit it!
-
----
-
-## 📂 Project Structure
+The application is split into a secure edge-serverless layer, a stateless vector-retrieval backend, and a reactive frontend dashboard.
 
 ```text
-├── functions/
-│   └── api/
-│       └── chat.ts       # Cloudflare Pages Function (Backend API Proxy)
-├── src/
-│   ├── assets/           # Scaffolded logos and assets
-│   ├── App.css           # Cleared default styles
-│   ├── App.tsx           # Main Application Component (UI & Voice Logic)
-│   ├── index.css         # Tailwind directives & premium animations
-│   └── main.tsx          # React application entrypoint
-├── index.html            # Main HTML layout, fonts, and meta SEO
-├── tailwind.config.js    # Tailwind scanner & transition specs
-├── postcss.config.js     # PostCSS setup
-├── package.json          # Node dependencies
-└── README.md             # This guide
+               +----------------------------------------+
+               |           Vite React Frontend          |
+               |     (Chat Interface & Booking UI)      |
+               +-------------------+--------------------+
+                                   |
+                  (1) REST API     |     (4) REST API
+                    Logs / Book    |       Chat Post
+                                   v
+               +----------------------------------------+
+               |        Cloudflare Pages Function       |
+               |            (Secure Edge Proxy)         |
+               +----------+-------------------+---------+
+                          |                   |
+               (2) Read   |   (3) D1 Bind     | (5) Pass Bookings
+                  / Write |     Bookings      |    & Chat payload
+                          v                   v
+               +------------------+   +-----------------+
+               |   Cloudflare D1  |   |  FastAPI RAG    |
+               |   SQL Database   |   | Backend (Render)|
+               +------------------+   +--------+--------+
+                                               |
+                                     (6) Query | (7) Embed
+                                      ChromaDB |    Query
+                                               v
+                                      +-----------------+
+                                      | Gemini 2.5 Flash|
+                                      |      RAG Model  |
+                                      +-----------------+
 ```
+
+### Key Architectural Layers:
+1. **Frontend**: React (Vite + TS + Tailwind) page displaying a two-column desktop layout (8-col Chat, 4-col interactive booking Calendar).
+2. **Edge proxy**: A Cloudflare Pages Function Worker (`/api/chat`, `/api/logs`, `/api/book`) that acts as a secure firewall. It fetches booking lists from **Cloudflare D1 SQL database**, feeds them into the RAG request payload, and scans returning history to automatically insert AI-completed bookings back into D1.
+3. **Stateless RAG Backend**: A python FastAPI backend hosted on Render. It receives the chat payload and active bookings context, queries the pre-populated **ChromaDB vector store** using `models/gemini-embedding-001`, constructs the grounded system instruction, and processes the Gemini tool-call loop. 
+4. **Key Manager**: Handles rate-limit safety by rotating through fallback API keys (`GEMINI_API_KEYS`) when encountering `429` rate limits.
 
 ---
 
-## 🎙️ Voice Persona Reference
+## 🛠️ Local Development & Setup
 
-The bot answers as if it is me, based on the following professional profile:
-- **Story**: Technical background in Electronics & Communication Engineering; built useful applied AI systems (face recognition, tutoring, translation, prompt governance). Transitioning into management & supply chain to merge tech with execution.
-- **Superpower**: High-speed execution. Taking ambiguous inputs, dividing them into modules, and building working prototypes rapidly.
-- **Growth Areas**: (1) Structured business-friendly communication, (2) Strategic decision-making in management/product, and (3) Long-term consistency/focus.
-- **Misconception**: Coworkers may think I do too much at once. However, I explore widely to learn fast but dive extremely deep to deliver when it matters.
-- **Boundary Pushing**: Taking projects slightly above my skill level and mastering them under pressure.
+### Backend Setup (Python)
+1. **Navigate to the backend directory**:
+   ```bash
+   cd backend
+   ```
+2. **Create a virtual environment & install requirements**:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+3. **Populate database locally**:
+   Set your `GEMINI_API_KEY` and run:
+   ```bash
+   $env:GEMINI_API_KEY="YOUR_GEMINI_KEY"
+   python populate_db.py
+   ```
+4. **Start local backend server**:
+   ```bash
+   python main.py
+   ```
+   The server will boot on `http://localhost:8000`.
+
+### Frontend Setup (Vite React)
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+2. **Run Vite development server (with API proxy)**:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:5173/](http://localhost:5173/) in your browser. All `/api` calls will automatically proxy to the Python backend on port `8000`.
+
+---
+
+## ⚡ API Cost Breakdown (Gemini 2.5 Flash)
+
+Offloading embeddings and context to the Gemini API keeps the backend RAM usage **under 50MB** (safe from Render's 512MB RAM OOM limits) and keeps operational costs extremely low.
+
+### Pricing Models:
+- **Input Tokens**: \$0.075 / 1 million tokens (\$0.000000075 per token)
+- **Output Tokens**: \$0.30 / 1 million tokens (\$0.00000030 per token)
+- **Embeddings**: \$0.025 / 1 million tokens (\$0.000000025 per token)
+
+### Cost per Single Chat Turn:
+- **Query Embedding**: ~10 tokens = **\$0.00000025**
+- **System context + History Input**: ~1,800 tokens = **\$0.00013500**
+- **Model Output Response**: ~150 tokens = **\$0.00004500**
+- **Total per turn**: **\$0.00018025** (~0.018 cents)
+
+### Cost per complete session (Average 10 turns):
+- **10 Turns**: 10 * \$0.00018025 = **\$0.0018025** (Approx. **0.18 cents** / **\$0.0018** per session).
+- Building this with external API calls is over **95% cheaper** than hosting dedicated GPU/vCPU servers, while maintaining sub-second TTFB first-response latency.
