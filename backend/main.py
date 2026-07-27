@@ -25,6 +25,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Health check endpoint to wake up Render backend
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy"}
+
 # Initialize RAGEngine
 rag = RAGEngine()
 

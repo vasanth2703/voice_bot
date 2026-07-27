@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     watch: {
-      ignored: ['**/backend/**'],
+      ignored: ['**/backend/**', '**/*.pdf'],
     },
     proxy: {
       '/api': {

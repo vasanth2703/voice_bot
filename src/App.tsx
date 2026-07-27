@@ -42,6 +42,11 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking]);
 
+  // Wake up Render Backend on page load (starts warming up the free tier container early)
+  useEffect(() => {
+    fetch("/api/health").catch((err) => console.error("Error warming up backend on load:", err));
+  }, []);
+
 
 
   // Initialize Speech Recognition
@@ -362,6 +367,8 @@ function App() {
             <div className="flex flex-col gap-3 pt-2">
               <button
                 onClick={() => {
+                  // Ensure backend wakeup ping is triggered when user interacts with popup
+                  fetch("/api/health").catch(() => {});
                   setShowWelcome(false);
                   startListening();
                 }}
@@ -372,6 +379,8 @@ function App() {
               
               <button
                 onClick={() => {
+                  // Ensure backend wakeup ping is triggered when user interacts with popup
+                  fetch("/api/health").catch(() => {});
                   setShowWelcome(false);
                   setTimeout(() => inputRef.current?.focus(), 100);
                 }}

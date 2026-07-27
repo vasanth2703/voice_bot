@@ -3,76 +3,74 @@ export const KNOWLEDGE_BASE = `# CANDIDATE PROFILE: VASANTHAKUMAR A
 ## RESUME AND PROFESSIONAL BACKGROUND
 --- Page 1 ---
 VasanthaKumar A
-Theni, Tamil Nadu | avk07373@gmail.com | +91 6374905981 |
-linkedin.com/in/vasanthakumar-a | github.com/vasanth2703
+Theni, Tamil Nadu | avk07373@gmail.com | +91 6374905981
+LinkedIn: linkedin.com/in/vasanthakumar-a | GitHub: github.com/vasanth2703 | Portfolio Website
+
 Summary
-Results-driven AI and Robotics student with hands-on experience in robot simulation, control systems, and intelligent
-automation. Skilled in building and testing robotic systems using tools like Gazebo, with a strong foundation in AI/ML and
-computer vision. Proven ability to integrate simulation with real-world robotics and iterate through testing and optimization.
+Results-driven Artificial Intelligence and Robotics student with hands-on experience in robotics simulation, intelligent automation, computer vision, AI systems, and real-world deployment. Experienced in leading technical teams, developing AI-powered applications, conducting workshops, and building scalable solutions using modern AI/ML technologies.
+
 Experience
 Robotics Engineer Intern, Zentron Labs – Trichy, Tamil Nadu Dec 2025 – Present
-• Built a computer vision segmentation pipeline using SAM2 for dataset creation and trained models with U-Net
-• Set up and configured end-to-end robot simulation environments using Gazebo
-• Implemented and tested steering control systems for wheeled robotic platforms
-• Performed robotic arm testing, including motion validation and joint-level verification
-• Integrated simulation with real-world robot behavior through iterative testing and debugging
-• Created a URDF editor tool with 3D visualization, Xacro conversion, and direct simulation deployment
-Team Lead – AI & Robotics Initiatives | Errormindz & VerditInn 2025
-• Led a 30+ member team in developing AI-driven applications and automation solutions
-• Built and scaled projects using AI/ML and agent-based systems for real-world use cases
-• Organized and delivered AI & Robotics workshops and campaigns in Schools, impacting 500+ students
-• Mentored participants and evaluated projects in technical events, including UTSAV’25 Hackathon
+• Built a computer vision segmentation pipeline using SAM2 for dataset creation and trained models using U-Net.
+• Configured and deployed end-to-end robot simulation environments using Gazebo and ROS2.
+• Designed and implemented a steering control system for a 3-wheeled robotic vehicle, validating turning behavior and stability through simulation testing. [Demo]
+• Built a web-based UI for robotic arm simulation, enabling interactive joint-level control and real-time motion validation. [Demo]
+• Integrated simulation environments with real-world robotic behavior through iterative testing and debugging.
+• Developed a URDF editor featuring 3D visualization, Xacro conversion, and direct simulation deployment.
+
+Team Lead – AI & Robotics Initiatives, Errormindz & VerditInn 2025
+• Spearheaded a 30+ member team in developing AI-driven applications, robotics solutions, and intelligent automation systems.
+• Built and scaled projects leveraging AI/ML, agentic AI, and automation technologies for real-world applications.
+• Organized and delivered AI & Robotics workshops, technical campaigns, and outreach programs impacting 500+ students.
+• Mentored participants and evaluated innovative projects during technical events including UTSAV’25 Hackathon.
+• Created AI-focused educational content, building a community of 3,000+ followers while promoting AI literacy, robotics, and emerging technologies. [Instagram]
+
 Anukul Shiksha Trainer, SASTRA University – Thanjavur 2025
-• Conducted intensive pre-placement training sessions for undergraduate students, focusing on aptitude, logical
-reasoning, soft skills, and interview preparation
-• Trained 200+ students to enhance problem-solving, and career-readiness skill
+• Conducted intensive pre-placement training sessions focused on aptitude, logical reasoning, communication, and interview preparation.
+• Trained and mentored 200+ students to improve analytical thinking and career readiness.
+
+Publications
+• Unified Real-Time Compliance Monitoring System – Accepted for publication at ICAIES-2025 (Springer LNCS Series, SCOPUS Indexed). Ranked among the Top 20% of submissions and presented at an international conference.
+
+--- Page 2 ---
 Projects
 Sana-V: Deep RL-Powered Assistive Robot 2025
-• Built a 4-wheeled robot that follows users, interacts via speech, and monitors behavior using camera-based AI
-perception and Deep Reinforcement Learning
-• Designed as an ADHD monitoring prototype with person tracking, autonomous patrols, and mobile-controlled interface
-for accessibility
-• Tools: ESP32, ESP32-Cam, Ultrasonic Sensors, Python, DRL
+• Built a 4-wheeled robot capable of following users, speech interaction, and behavior monitoring using camera-based AI perception and Deep Reinforcement Learning.
+• Designed an ADHD monitoring prototype with person tracking, autonomous patrols, and mobile-controlled accessibility features.
+• Technologies: ESP32, ESP32-CAM, Ultrasonic Sensors, Python, Deep Reinforcement Learning.
+
 Unified Real-Time Compliance Monitoring System 2025
-• Implemented a real-time system to detect helmet violations, overspeeding, overloading,facial recognition and extract
-license plates from traffic video streams
-• Paper accepted for publication: ICAIES-2025 (Springer LNCS Series, SCOPUS-Indexed) – Top 20% of submissions, Oral
-presentation at International Conference on AI in Engineering Systems, December 2025
---- Page 2 ---
-• Tools: Python, OpenCV, Deep Learning (Detection & Tracking), Computer Vision
-DesAiN – AI-Powered Document Creation & Analysis Platform 2025
-• Built a dual-module platform that auto-generates professional presentations from text prompts and performs semantic
-search over PDFs, PPTs, and Word documents
-• Developed backend with FastAPI, Gemini AI, Supabase, and pgvector, with real-time generation preview via WebSockets
-and SASTRA-template integration
-• Tools: Python, FastAPI, Gemini AI, Supabase.
+• Implemented a real-time traffic monitoring system to detect helmet violations, overspeeding, overloading, facial recognition, and license plate extraction.
+• Technologies: Python, OpenCV, Deep Learning, Detection & Tracking, Computer Vision.
+
 3D Design Customizer Web App 2025
-• Developing an AI-driven platform for customized product design visualization using Three.js
-• Allows users to personalize designs (bags, boxes, bottles) by automatically placing logos, text, and images on 3D models
-• Tools: JavaScript, Three.js, GANs, Python
-Wearable AI Device for Visually Impaired Users 2025
-• Developing a wearable device using computer vision and AI to detect obstacles, recognize human
-presence/behavior, and provide real-time audio guidance
-• Integrated object detection and distance estimation algorithms for enhanced safety
-• Tools: ESP32, Arduino IDE, Computer Vision, AI
-Recreating Google MediaPipe pose detection system 2024
-• Built an advanced pose estimation model using the COCO 2017 dataset
-• Implemented advanced architecture with residual blocks and attention mechanisms for improved accuracy
-• Tools: Python, OpenCV, PyTorch
+• Developing an AI-driven platform for customized product visualization using Three.js.
+• Enabled automatic placement of logos, text, and images on 3D product models including bags, boxes, and bottles.
+• Technologies: JavaScript, Three.js, GANs, Python.
+
+Recreating Google MediaPipe Pose Detection System 2024
+• Built an advanced pose estimation model using the COCO 2017 dataset.
+• Implemented residual blocks and attention mechanisms for improved pose estimation accuracy.
+• Technologies: Python, OpenCV, PyTorch.
+
 Education
-SASTRA University, BTech in Artificial Intelligence and Robotics – Thanjavur 2022 – Present
-• Specialization in AI/ML, Computer Vision, and Multi-Agent Systems
-• Active participation in robotics research and development projects
-ANNS Matriculation and Higher Secondary School – Cumbum, Theni 2021
-• Completed Higher Secondary Education with strong foundation in Mathematics and Science
+SASTRA University 2022 – Present
+Bachelor of Technology in Artificial Intelligence and Robotics
+• Specialization in AI/ML, Computer Vision, and Multi-Agent Systems.
+• Active participation in robotics research and development projects.
+
+ANNS Matriculation and Higher Secondary School 2021
+
 Technical Skills
 Programming Languages: Python, C, C++
-AI/ML & Automation: CNNs, LLM, GANs, LSTM, DRL, NLP, n8n, Computer Vision, RAG, AI Agents, ComfyUI
-Web & App Development: Streamlit, Flutter, FastAPI, Three.js
-Simulation & Robotics: Gazebo, MATLAB, ROS2, CoppeliaSim,RPI,ESP32, ESP32Cam, Arduino IDE, Jetson Nano, 3D Printing,
-CP Plus CCTV Camera (AI Pipeline).
-Leadership & Business: Team Management, Startup Scaling, Marketing Strategies, Educational Campaigns
-Languages: Tamil (Native), English (Fluent)
+AI/ML & Automation: CNNs, LLMs, GANs, LSTMs, DRL, NLP, RAG, AI Agents, Computer Vision, ComfyUI, n8n
+Web & Application Development: FastAPI, Streamlit, Flutter, Three.js
+Simulation & Robotics: Gazebo, ROS2, MATLAB, CoppeliaSim, Raspberry Pi, ESP32, ESP32-CAM, Arduino IDE, Jetson Nano, 3D Printing, AI CCTV Pipelines
+Leadership & Business: Team Management, Startup Scaling, Technical Mentoring, Marketing Strategies, Educational Campaigns
+
+Languages
+Tamil (Native), English (Fluent)
+
 
 ## PERSONAL EXPERIENCE & AUTOMATION SPECIALIZATION (n8n & Chatbots)
 - **n8n Automation Expert**: Hands-on experience building, scaling, and managing complex workflow automations using n8n.
@@ -105,7 +103,6 @@ Below is the comprehensive list of public GitHub repositories built by Vasanthak
 - **2025-11-22** (f9e9c3e): Initial commit (by Vasantha kumar A)
 
 ### README.md CONTENTS
-<<<<<<< HEAD
 # 🤖 YOLO + PatchCore Industrial Inspection System
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
@@ -548,9 +545,7 @@ For issues or questions:
 - Three.js for 3D visualization
 - React for dashboard UI
 - Supabase for real-time database
-=======
-# Automate-visual-inspection-robot-
->>>>>>> f9e9c3e395dd3c9f1c6e0315f5437d409965b3a2
+
 
 ---
 
@@ -1567,6 +1562,129 @@ If you need help, you can always chat with us at https://render.com/chat.
 Youtube tutorial: Host apps on Render.com
 
 [![IMAGE_ALT](docs/images/render_dot_com.png)](https://youtu.be/WfjsGv5RoGE)
+
+---
+## REPOSITORY: voice_bot
+- **URL**: https://github.com/vasanth2703/voice_bot
+- **Description**: A premium, interactive, and voice-enabled web application that allows users to ask professional questions and hear replies in the first person representing the candidate. It integrates real-time similarity search (RAG) over the candidate's resume/repositories and features an interactive booking calendar UI.
+- **Primary Language**: TypeScript
+- **Topics/Tags**: None
+- **Created At**: 2026-05-28T00:00:00Z
+- **Last Updated At**: 2026-07-27T00:00:00Z
+
+### RECENT COMMIT HISTORY
+- **2026-06-06** (e822a31): docs: update evaluation report with Vapi and Chat workflow metrics (by Vasanthakumar)
+- **2026-06-06** (4de47fc): style: add mobile tab switcher and responsive heights for chat and scheduler (by Vasanthakumar)
+- **2026-06-06** (b5a0adc): feat: embed Cal.com secret scheduler widget in sidebar (by Vasanthakumar)
+- **2026-06-06** (e820967): docs: add evaluation report and update README (by Vasanthakumar)
+- **2026-06-06** (92850e1): chore: commit pre-populated ChromaDB vector store and update .gitignore (by Vasanthakumar)
+
+### README.md CONTENTS
+# 🎙️ Personal Voice Interview Bot & Interactive Scheduler
+
+A premium, interactive, and voice-enabled web application that allows users to ask professional questions and hear replies in the first person representing the candidate. It integrates real-time similarity search (RAG) over the candidate's resume/repositories and features an interactive booking calendar UI.
+
+---
+
+## 🏗️ System Architecture & Dataflow
+
+The application is split into a secure edge-serverless layer, a stateless vector-retrieval backend, and a reactive frontend dashboard.
+
+\`\`\`text
+               +----------------------------------------+
+               |           Vite React Frontend          |
+               |     (Chat Interface & Booking UI)      |
+               +-------------------+--------------------+
+                                   |
+                  (1) REST API     |     (4) REST API
+                    Logs / Book    |       Chat Post
+                                   v
+               +----------------------------------------+
+               |        Cloudflare Pages Function       |
+               |            (Secure Edge Proxy)         |
+               +----------+-------------------+---------+
+                          |                   |
+               (2) Read   |   (3) D1 Bind     | (5) Pass Bookings
+                  / Write |     Bookings      |    & Chat payload
+                          v                   v
+               +------------------+   +-----------------+
+               |   Cloudflare D1  |   |  FastAPI RAG    |
+               |   SQL Database   |   | Backend (Render)|
+               +------------------+   +--------+--------+
+                                               |
+                                     (6) Query | (7) Embed
+                                      ChromaDB |    Query
+                                               v
+                                      +-----------------+
+                                      | Gemini 2.5 Flash|
+                                      |      RAG Model  |
+                                      +-----------------+
+\`\`\`
+
+### Key Architectural Layers:
+1. **Frontend**: React (Vite + TS + Tailwind) page displaying a two-column desktop layout (8-col Chat, 4-col interactive booking Calendar).
+2. **Edge proxy**: A Cloudflare Pages Function Worker (\`/api/chat\`, \`/api/logs\`, \`/api/book\`) that acts as a secure firewall. It fetches booking lists from **Cloudflare D1 SQL database**, feeds them into the RAG request payload, and scans returning history to automatically insert AI-completed bookings back into D1.
+3. **Stateless RAG Backend**: A python FastAPI backend hosted on Render. It receives the chat payload and active bookings context, queries the pre-populated **ChromaDB vector store** using \`models/gemini-embedding-001\`, constructs the grounded system instruction, and processes the Gemini tool-call loop. 
+4. **Key Manager**: Handles rate-limit safety by rotating through fallback API keys (\`GEMINI_API_KEYS\`) when encountering \`429\` rate limits.
+
+---
+
+## 🛠️ Local Development & Setup
+
+### Backend Setup (Python)
+1. **Navigate to the backend directory**:
+   \`\`\`bash
+   cd backend
+   \`\`\`
+2. **Create a virtual environment & install requirements**:
+   \`\`\`bash
+   python -m venv venv
+   .\\venv\\Scripts\\activate
+   pip install -r requirements.txt
+   \`\`\`
+3. **Populate database locally**:
+   Set your \`GEMINI_API_KEY\` and run:
+   \`\`\`bash
+   $env:GEMINI_API_KEY="YOUR_GEMINI_KEY"
+   python populate_db.py
+   \`\`\`
+4. **Start local backend server**:
+   \`\`\`bash
+   python main.py
+   \`\`\`
+   The server will boot on \`http://localhost:8000\`.
+
+### Frontend Setup (Vite React)
+1. **Install dependencies**:
+   \`\`\`bash
+   npm install
+   \`\`\`
+2. **Run Vite development server (with API proxy)**:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
+   Open [http://localhost:5173/](http://localhost:5173/) in your browser. All \`/api\` calls will automatically proxy to the Python backend on port \`8000\`.
+
+---
+
+## ⚡ API Cost Breakdown (Gemini 2.5 Flash)
+
+Offloading embeddings and context to the Gemini API keeps the backend RAM usage **under 50MB** (safe from Render's 512MB RAM OOM limits) and keeps operational costs extremely low.
+
+### Pricing Models:
+- **Input Tokens**: \\$0.075 / 1 million tokens (\\$0.000000075 per token)
+- **Output Tokens**: \\$0.30 / 1 million tokens (\\$0.00000030 per token)
+- **Embeddings**: \\$0.025 / 1 million tokens (\\$0.000000025 per token)
+
+### Cost per Single Chat Turn:
+- **Query Embedding**: ~10 tokens = **\\$0.00000025**
+- **System context + History Input**: ~1,800 tokens = **\\$0.00013500**
+- **Model Output Response**: ~150 tokens = **\\$0.00004500**
+- **Total per turn**: **\\$0.00018025** (~0.018 cents)
+
+### Cost per complete session (Average 10 turns):
+- **10 Turns**: 10 * \\$0.00018025 = **\\$0.0018025** (Approx. **0.18 cents** / **\\$0.0018** per session).
+- Building this with external API calls is over **95% cheaper** than hosting dedicated GPU/vCPU servers, while maintaining sub-second TTFB first-response latency.
 
 ---
 `;
