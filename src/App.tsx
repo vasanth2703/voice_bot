@@ -29,6 +29,7 @@ function App() {
 
   // Welcome Screen & Input Focus
   const [showWelcome, setShowWelcome] = useState(true);
+  const [welcomeStep, setWelcomeStep] = useState<1 | 2>(1);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const recognitionRef = useRef<any>(null);
@@ -194,6 +195,24 @@ function App() {
     }
   };
 
+  const handleStart = async (mode: "speak" | "chat") => {
+    setWelcomeStep(2);
+
+    try {
+      // Trigger the backend wakeup ping
+      await fetch("/api/health");
+    } catch (err) {
+      console.error("Warmup ping failed:", err);
+    } finally {
+      setShowWelcome(false);
+      if (mode === "speak") {
+        startListening();
+      } else {
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
+    }
+  };
+
   // Submit message to Gemini RAG Pipeline
   const askBot = async (textToAsk?: string) => {
     const queryText = textToAsk || question;
@@ -351,44 +370,72 @@ function App() {
       {showWelcome && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl text-center space-y-6 transform animate-scale-up">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
-              <span className="text-3xl">🎙️</span>
-            </div>
-            
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
-                Talk to Vasanth's AI Agent
-              </h2>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Interact using your voice to hear responses, or cancel to type standard text questions.
-              </p>
-            </div>
+            {welcomeStep === 1 ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
+                  <span className="text-3xl">🎙️</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                    Talk to Vasanth's AI Agent
+                  </h2>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    Interact using your voice to hear responses, or cancel to type standard text questions.
+                  </p>
+                </div>
 
-            <div className="flex flex-col gap-3 pt-2">
-              <button
-                onClick={() => {
-                  // Ensure backend wakeup ping is triggered when user interacts with popup
-                  fetch("/api/health").catch(() => {});
-                  setShowWelcome(false);
-                  startListening();
-                }}
-                className="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                <span>🎙️ Tap to Speak</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  // Ensure backend wakeup ping is triggered when user interacts with popup
-                  fetch("/api/health").catch(() => {});
-                  setShowWelcome(false);
-                  setTimeout(() => inputRef.current?.focus(), 100);
-                }}
-                className="w-full py-3 rounded-xl font-semibold text-xs border border-slate-800 hover:bg-slate-850 active:scale-[0.98] text-slate-400 hover:text-slate-200 transition-all"
-              >
-                Cancel to Chat
-              </button>
-            </div>
+                <div className="flex flex-col gap-3 pt-2">
+                  <button
+                    onClick={() => handleStart("speak")}
+                    className="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>🎙️ Tap to Speak</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleStart("chat")}
+                    className="w-full py-3 rounded-xl font-semibold text-xs border border-slate-800 hover:bg-slate-850 active:scale-[0.98] text-slate-400 hover:text-slate-200 transition-all"
+                  >
+                    Cancel to Chat
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
+                  <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
+                    Connecting to AI Agent
+                  </h2>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    Waking up the backend server from its sleep mode. This takes about 10-15 seconds if the bot was idle for a while.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-inner">
+                  <p className="text-xs text-slate-300">
+                    While the server initializes, you can view or download my resume:
+                  </p>
+                  
+                  <a
+                    href="/Vasanthakumar_resume.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:border-indigo-500/50 shadow-md shadow-indigo-500/5 transition-all active:scale-[0.98]"
+                  >
+                    📄 View/Download Resume (PDF)
+                  </a>
+                </div>
+
+                <div className="text-[10px] text-slate-500 italic">
+                  Tip: Use the voice feature to speak directly with the AI representative!
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -398,13 +445,24 @@ function App() {
       <div className="absolute bottom-1/6 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-violet-600/10 animate-pulse-glow -z-10 pointer-events-none" />
 
       {/* Header */}
-      <header className="w-full max-w-7xl mx-auto flex flex-col justify-center items-center text-center mb-8 pb-4 border-b border-slate-800/80">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-violet-400 to-pink-400 bg-clip-text text-transparent mb-2">
-          Vasanthakumar A
-        </h1>
-        <p className="text-xs md:text-sm text-slate-400">
-          Interactive AI Assistant grounded in GitHub repositories & actual resume history.
-        </p>
+      <header className="w-full max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-8 pb-4 border-b border-slate-800/80">
+        <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-violet-400 to-pink-400 bg-clip-text text-transparent mb-2">
+            Vasanthakumar A
+          </h1>
+          <p className="text-xs md:text-sm text-slate-400">
+            Interactive AI Assistant grounded in GitHub repositories & actual resume history.
+          </p>
+        </div>
+        
+        <a
+          href="/Vasanthakumar_resume.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-900 hover:bg-slate-850 text-indigo-400 border border-slate-800 hover:border-indigo-500/50 shadow-md shadow-indigo-500/5 transition-all active:scale-[0.98]"
+        >
+          📄 View/Download Resume (PDF)
+        </a>
       </header>
 
       {/* Mobile Tabs Switcher */}
