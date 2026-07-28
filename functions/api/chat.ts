@@ -1,4 +1,6 @@
+/// <reference types="@cloudflare/workers-types" />
 import { onRequestGet as handleLogs } from "./logs";
+
 
 interface Env {
   RENDER_BACKEND_URL?: string;
