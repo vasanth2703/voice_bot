@@ -27,9 +27,9 @@ function App() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>("");
 
-  // Welcome Screen & Input Focus
   const [showWelcome, setShowWelcome] = useState(true);
-  const [welcomeStep, setWelcomeStep] = useState<1 | 2>(1);
+  const [welcomeStep, setWelcomeStep] = useState<1 | 2 | 3 | 4>(1);
+  const [backendStatus, setBackendStatus] = useState<"idle" | "loading" | "ready">("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const recognitionRef = useRef<any>(null);
@@ -195,21 +195,24 @@ function App() {
     }
   };
 
-  const handleStart = async (mode: "speak" | "chat") => {
+  const handleStartOnboarding = () => {
     setWelcomeStep(2);
+    setBackendStatus("loading");
+    // Start backend warmup request on very first click
+    fetch("/api/health")
+      .then(() => setBackendStatus("ready"))
+      .catch((err) => {
+        console.error("Warmup ping failed:", err);
+        setBackendStatus("ready"); // Fallback to ready to prevent blockages
+      });
+  };
 
-    try {
-      // Trigger the backend wakeup ping
-      await fetch("/api/health");
-    } catch (err) {
-      console.error("Warmup ping failed:", err);
-    } finally {
-      setShowWelcome(false);
-      if (mode === "speak") {
-        startListening();
-      } else {
-        setTimeout(() => inputRef.current?.focus(), 100);
-      }
+  const handleCompleteOnboarding = (mode: "speak" | "chat") => {
+    setShowWelcome(false);
+    if (mode === "speak") {
+      startListening();
+    } else {
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
@@ -368,59 +371,70 @@ function App() {
       
       {/* Welcome Screen Overlay */}
       {showWelcome && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl text-center space-y-6 transform animate-scale-up">
-            {welcomeStep === 1 ? (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl text-center space-y-6 transform animate-scale-up relative overflow-hidden">
+            {/* Progress indicators */}
+            <div className="flex justify-center gap-1.5 mb-2">
+              {[1, 2, 3, 4].map((step) => (
+                <div
+                  key={step}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    welcomeStep === step
+                      ? "w-8 bg-indigo-500"
+                      : welcomeStep > step
+                      ? "w-2 bg-indigo-600/40"
+                      : "w-2 bg-slate-800"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {welcomeStep === 1 && (
               <>
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
-                  <span className="text-3xl">🎙️</span>
+                  <span className="text-3xl">🤖</span>
                 </div>
                 
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
-                    Talk to Vasanth's AI Agent
+                    Vasanth's AI Representative
                   </h2>
                   <p className="text-sm text-slate-400 leading-relaxed">
-                    Interact using your voice to hear responses, or cancel to type standard text questions.
+                    Welcome! You can interact with Vasanth's RAG-grounded AI agent using either standard text chat or real-time voice synthesis.
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-3 pt-2">
+                <div className="pt-2">
                   <button
-                    onClick={() => handleStart("speak")}
-                    className="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
+                    onClick={handleStartOnboarding}
+                    className="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
                   >
-                    <span>🎙️ Tap to Speak</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => handleStart("chat")}
-                    className="w-full py-3 rounded-xl font-semibold text-xs border border-slate-800 hover:bg-slate-850 active:scale-[0.98] text-slate-400 hover:text-slate-200 transition-all"
-                  >
-                    Cancel to Chat
+                    <span>Continue to Tour</span>
+                    <span>→</span>
                   </button>
                 </div>
               </>
-            ) : (
+            )}
+
+            {welcomeStep === 2 && (
               <>
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
-                  <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="text-3xl">📄</span>
                 </div>
                 
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
-                    Connecting to AI Agent
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                    View & Download Resume
                   </h2>
                   <p className="text-sm text-slate-400 leading-relaxed">
-                    Waking up the backend server from its sleep mode. This takes about 10-15 seconds if the bot was idle for a while.
+                    Looking for detailed credentials? You can download or view Vasanth's official resume PDF at any time.
                   </p>
                 </div>
 
-                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-inner">
-                  <p className="text-xs text-slate-300">
-                    While the server initializes, you can view or download my resume:
-                  </p>
-                  
+                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-inner flex flex-col items-center">
+                  <div className="text-[10px] text-indigo-400 font-bold tracking-wider flex items-center gap-1 animate-bounce">
+                    <span>⬇️</span> Check out the resume below:
+                  </div>
                   <a
                     href="/Vasanthakumar_resume.pdf"
                     target="_blank"
@@ -431,8 +445,95 @@ function App() {
                   </a>
                 </div>
 
-                <div className="text-[10px] text-slate-500 italic">
-                  Tip: Use the voice feature to speak directly with the AI representative!
+                <div className="pt-2">
+                  <button
+                    onClick={() => setWelcomeStep(3)}
+                    className="w-full py-3 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-750 text-slate-200 active:scale-[0.98] transition-all"
+                  >
+                    Next Step
+                  </button>
+                </div>
+              </>
+            )}
+
+            {welcomeStep === 3 && (
+              <>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
+                  <span className="text-3xl">📅</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                    Appoint a Meeting
+                  </h2>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    Need to schedule a call? You can check Vasanth's real-time availability and book a slot directly using the integrated calendar sidebar.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 text-slate-300 text-xs text-center flex flex-col items-center justify-center gap-2 shadow-inner">
+                  <span className="text-2xl animate-pulse">📆</span>
+                  <p className="font-semibold text-slate-400">Interactive Cal.com Scheduler on the right</p>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => setWelcomeStep(4)}
+                    className="w-full py-3 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-750 text-slate-200 active:scale-[0.98] transition-all"
+                  >
+                    Next Step
+                  </button>
+                </div>
+              </>
+            )}
+
+            {welcomeStep === 4 && (
+              <>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
+                  {backendStatus === "loading" ? (
+                    <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="text-3xl">🎙️</span>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                    Choose Your Mode
+                  </h2>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    You're ready! Start talking using your voice to hear responses, or cancel to chat standard text.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 pt-2">
+                  <button
+                    onClick={() => handleCompleteOnboarding("speak")}
+                    className="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>🎙️ Tap to Speak</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleCompleteOnboarding("chat")}
+                    className="w-full py-3 rounded-xl font-semibold text-xs border border-slate-800 hover:bg-slate-850 active:scale-[0.98] text-slate-400 hover:text-slate-200 transition-all"
+                  >
+                    Cancel to Chat
+                  </button>
+                </div>
+
+                <div className="flex justify-center items-center gap-1.5 text-[10px] text-slate-500 mt-2 font-medium">
+                  {backendStatus === "loading" ? (
+                    <>
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      <span>Waking up backend server...</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-green-400 font-semibold">AI representative connected!</span>
+                    </>
+                  )}
                 </div>
               </>
             )}
