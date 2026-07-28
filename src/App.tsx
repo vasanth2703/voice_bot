@@ -608,7 +608,7 @@ function App() {
                 </span>
               ) : isThinking ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 animate-pulse">
-                  Searching knowledge base...
+                  {messages.length <= 2 ? "Waking up server..." : "Searching database..."}
                 </span>
               ) : isSpeaking ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
@@ -703,7 +703,11 @@ function App() {
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
-                  <span className="text-[10px] text-slate-500 italic font-medium">Searching knowledge base...</span>
+                  <span className="text-[10px] text-slate-500 italic font-medium">
+                    {messages.length <= 2 
+                      ? "I'm waking up my representative server and gathering details to answer your question... (This first request may take up to 10-15 seconds)"
+                      : "Searching knowledge base..."}
+                  </span>
                 </div>
               </div>
             )}
